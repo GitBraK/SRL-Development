@@ -1,6 +1,8 @@
-const
-  SEARCH_ID = 1381;
-{$i SRL/SRL.sImba}
+{$IFDEF SRL5}
+  {$i SRL/SRL.simba}
+{$ELSE}
+  {$i SRL/SRL.scar}
+{$ENDIF}
 
 type
   TGEItem = record
@@ -11,17 +13,22 @@ type
     AverageColor : Integer;
   end;
 
-function CashStringToInt(S: string): Integer;  //Thanks TomTuff!
-Var
-  i, ii: Integer;
-  Numbs: TStringArray;
-  Temp: string;
+{*******************************************************************************
+function CashStringToInt(S : string) : Integer;
+by: TomTuff
+Description: Takes a string amount, and returns the Integer equivalent.
+*******************************************************************************}
+function CashStringToInt(S : string) : Integer;
+var
+  i, ii : Integer;
+  Numbs : TStringArray;
+  Temp  : string;
 begin
   Temp := '';
   Numbs := ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'k', 'm', 'b'];
   for i := 1 to High(S) do
     for ii := 0 to High(Numbs) do
-      if S[i] = Numbs[ii] then
+      if(S[i] = Numbs[ii])then
         case ii of
           0..9: Temp := Temp + Numbs[ii];
           10..12:
@@ -34,22 +41,26 @@ begin
             end;
           end;
         end;
-  if (Result = 0) then
+  if(Result = 0)then
     try
-    Result := StrToInt(Temp);
+      Result := StrToInt(Temp);
     except end;
 end;
 
-  // From Home's system
-function DownloadFile(FileLink, Path: String): Boolean;
+{*******************************************************************************
+function DownloadFile(FileLink, Path : string) : Boolean;
+by: Home
+Description: Downloads a file to a specified path
+*******************************************************************************}
+function DownloadFile(FileLink, Path : string) : Boolean;
 var
-  PageString: String;
+  PageString: string;
   iFile: Integer;
 begin
   Result := False;
   try
     PageString := GetPage(FileLink);
-    if PageString = '' then Exit;
+    if(PageString = '')then Exit;
     iFile := RewriteFile(Path, False);
     Result := WriteFileString(iFile, PageString);
     CloseFile(iFile);
@@ -57,42 +68,54 @@ begin
   end;
 end;
 
-
-
-
-function GEItemExists(ID : Integer): Boolean;
+{*******************************************************************************
+function GEItemExists(ID : Integer) : Boolean;
+by: Home
+Description: Checks the local item DB to see if the item being requested exists
+*******************************************************************************}
+function GEItemExists(ID : Integer) : Boolean;
 begin
   Result := FileExists(AppPath + 'Includes\db\' + ToStr(ID) + '.ini');
 end;
 
-function ReadGEItemINI(ID : Integer): TGEItem;
+{*******************************************************************************
+function ReadGEItemINI(ID : Integer) : TGEItem;
+by: Home
+Description: Reads the items .INI file and returns a TGEItem record
+*******************************************************************************}
+function ReadGEItemINI(ID : Integer) : TGEItem;
 var
   Path : string;
 begin
-  if not GEItemExists(ID) then Exit;
+  if(not(GEItemExists(ID)))then Exit;
 
   Path := AppPath + 'Includes\db\' + ToStr(ID) + '.ini';
   try
-  with Result do
-  begin
-    ID := StrToIntDef(ReadINI(ToStr(ID), 'ID', Path), -1);
-    Price := StrToIntDef(ReadINI(ToStr(ID), 'Price', Path), -1);
-    Name := ReadINI(ToStr(ID), 'Name', Path);
-    BMP := BitmapFromString(32, 32, ReadINI(ToStr(ID), 'BMP', Path));
-    BlackCount := StrToIntDef(ReadINI(ToStr(ID), 'BlackCount', Path), -1);
-    AverageColor := StrToIntDef(ReadINI(ToStr(ID), 'AverageColor', Path), -1);
-  end;
+    with Result do
+    begin
+      ID := StrToIntDef(ReadINI(ToStr(ID), 'ID', Path), -1);
+      Price := StrToIntDef(ReadINI(ToStr(ID), 'Price', Path), -1);
+      Name := ReadINI(ToStr(ID), 'Name', Path);
+      BMP := BitmapFromString(32, 32, ReadINI(ToStr(ID), 'BMP', Path));
+      BlackCount := StrToIntDef(ReadINI(ToStr(ID), 'BlackCount', Path), -1);
+      AverageColor := StrToIntDef(ReadINI(ToStr(ID), 'AverageColor', Path), -1);
+    end;
   except
   end;
 end;
 
+{*******************************************************************************
+procedure WriteGEItemINI(Item : TGEItem);
+by: Home
+Description: Writes a .INI file for the TGEItem that is passed in
+*******************************************************************************}
 procedure WriteGEItemINI(Item : TGEItem);
 var
   Path : string;
 begin
-  if not DirectoryExists(AppPath + 'Includes\DB') then
+  if(not(DirectoryExists(AppPath + 'Includes\DB')))then
     CreateDirectory(AppPath + 'Includes\DB');
-  Path := AppPath + 'Includes\db\' + ToStr(Item.ID) + '.ini';
+  Path := AppPath + 'Includes\DB\' + ToStr(Item.ID) + '.ini';
   try
     with Item do
     begin
@@ -107,8 +130,13 @@ begin
   end;
 end;
 
-  // Mostly from Home's system (99%)
-function GetGEItemBMPFromID(ID : Integer): Integer;
+
+{*******************************************************************************
+function GetGEItemBMPFromID(ID : Integer) : Integer;
+by: Home
+Description: Retrieves the .gif image from the GE
+*******************************************************************************}
+function GetGEItemBMPFromID(ID : Integer) : Integer;
 var
   I, J, W, H, BMP : Integer;
   TPA : TPointArray;
@@ -116,17 +144,17 @@ var
   FilterColors, FilterColorsTo : TIntegerArray;
 begin
   // URL to .gif of the item from runescape's GE
-  if DownloadFile('http://services.runescape.com/m=itemdb_rs/g=runescape/obj_sprite.gif?id=' + ToStr(ID), AppPath + 'Includes\db\' + ToStr(ID) + '.gif') then
+  if DownloadFile('http://services.runescape.com/m=itemdb_rs/g=runescape/obj_sprite.gif?id=' + ToStr(ID), AppPath + 'Includes\DB\' + ToStr(ID) + '.gif') then
   begin
     Target := GetImageTarget;
-    BMP := LoadBitmap(AppPath + 'Includes\db\' + ToStr(ID) + '.gif');
+    BMP := LoadBitmap(AppPath + 'Includes\DB\' + ToStr(ID) + '.gif');
     SetTargetBitmap(BMP);
     GetBitmapSize(BMP, W, H);
 
-    FilterColors   := [2171169, 526344,            460551];
-    FilterColorsTo := [0,       srl_outline_black, srl_outline_black];
+    FilterColors   := [2171169, 526344, 460551];
+    FilterColorsTo := [0, srl_outline_black, srl_outline_black];
     for I := High(FilterColors) downto 0 do
-      if FindColors(TPA, FilterColors[I], 0, 0, W - 1, H - 1) then
+      if(FindColors(TPA, FilterColors[I], 0, 0, W - 1, H - 1))then
         for J := 0 to High(TPA) do
           FastSetPixel(BMP, TPA[J].X, TPA[J].Y, FilterColorsTo[I]);
 
@@ -138,14 +166,20 @@ begin
   end;
 end;
 
-function CreateGEItemFromIDEx(ID : Integer; Force : Boolean): TGEItem;
+{*******************************************************************************
+function CreateGEItemFromIDEx(ID : Integer; Force : Boolean) : TGEItem;
+by: Home
+Description: Creates an TGEItem for the ID that is passed in. If Force is set
+             to True, the current .gif image and .INI files will be rewriten
+*******************************************************************************}
+function CreateGEItemFromIDEx(ID : Integer; Force : Boolean) : TGEItem;
 var
   S : string;
   Target, W, H, I : Integer;
   BoxTPA, TPA : TPointArray;
   FilterColors : TIntegerArray;
 begin
-  if GEItemExists(ID) and not Force then
+  if(GEItemExists(ID) and (not(Force)))then
   begin
     Result := ReadGEItemINI(ID);
     Exit;
@@ -166,7 +200,7 @@ begin
     FilterColors := [0, 2171169];
     BoxTPA := TPAFromBox(IntToBox(0, 0, W-1, H-1));
     for I := High(FilterColors) downto 0 do
-      if FindColors(TPA, FilterColors[I], 0, 0, W-1, H-1) then
+      if(FindColors(TPA, FilterColors[I], 0, 0, W-1, H-1))then
         BoxTPA := ClearTPAFromTPA(BoxTPA, TPA);
     FindColors(TPA, srl_outline_black, 0, 0, W-1, H-1);
 
@@ -179,18 +213,34 @@ begin
   WriteGEItemINI(Result);
 end;
 
-function CreateGEItemFromID(ID : Integer): TGEItem;
+{*******************************************************************************
+function CreateGEItemFromID(ID : Integer) : TGEItem;
+by: Home
+Description: Creates an TGEItem for the ID passed in, and disables Force
+*******************************************************************************}
+function CreateGEItemFromID(ID : Integer) : TGEItem;
 begin
   Result := CreateGEItemFromIDEx(ID, False);
 end;
 
-function LoadGEItemFromID(ID : Integer): TGEItem;
+{*******************************************************************************
+function LoadGEItemFromID(ID : Integer) : TGEItem;
+by: Home
+Description: Loads an TGEItem record from the local DB of items
+*******************************************************************************}
+function LoadGEItemFromID(ID : Integer) : TGEItem;
 begin
-  if GEItemExists(ID) then
+  if(GEItemExists(ID))then
     Result := ReadGEItemINI(ID)
 end;
 
-function FindGEItem(var X, Y : Integer; ID : Integer): Boolean;
+{*******************************************************************************
+function FindGEItem(var X, Y : Integer; ID : Integer) : Boolean;
+by: Home
+Description: Searches the Inventory for the item and set the X, Y variables to
+             the coordinates if found
+*******************************************************************************}
+function FindGEItem(var X, Y : Integer; ID : Integer) : Boolean;
 var
   Acc : Extended;
   Item : TGEItem;
@@ -205,8 +255,8 @@ begin
   {ClearDebugImg;
   DrawBitmapDebugImg(Item.BMP);}
   // Use this as last resort IMO
-  if FindDeformedBitmapToleranceIn(Item.BMP, P.X, P.Y, MIX1, MIY1, MIX2, MIY2, 25, 0, True, Acc) then
-    if Acc > 0.80 then
+  if(FindDeformedBitmapToleranceIn(Item.BMP, P.X, P.Y, MIX1, MIY1, MIX2, MIY2, 25, 0, True, Acc))then
+    if(Acc > 0.80)then
     begin
       Result := True;
       FreeBitmap(Item.BMP);
@@ -217,6 +267,9 @@ begin
       WriteLn(Acc);  }
 end;
 
+{//////////////////////////////////////////////////////////////////////////////}
+//                                TESTING                                     //
+{//////////////////////////////////////////////////////////////////////////////}
 var
   Item : TGEItem;
   x, y : Integer;
@@ -225,9 +278,9 @@ begin
   SetupSRL;
   MouseSpeed := 12;
 
-  Item := CreateGEItemFromIDEx(SEARCH_ID, True);
+  Item := CreateGEItemFromIDEx(1381, True);
   WriteLn(Item);
-  if FindGEItem(X, Y, Item.ID) then
+  if(FindGEItem(X, Y, Item.ID))then
     MMouse(X-5, Y-5, 10, 10)
   else
     WriteLn('Did not find item');

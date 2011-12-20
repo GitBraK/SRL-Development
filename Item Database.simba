@@ -1,9 +1,6 @@
 const
   SEARCH_ID = 1381;
-
-
-
-{$i SRL/SRL.simba}
+{$i SRL/SRL.sImba}
 
 type
   TGEItem = record
@@ -65,7 +62,7 @@ end;
 
 function GEItemExists(ID : Integer): Boolean;
 begin
-  Result := FileExists(ScriptPath + 'db\' + ToStr(ID) + '.ini');
+  Result := FileExists(AppPath + 'Includes\db\' + ToStr(ID) + '.ini');
 end;
 
 function ReadGEItemINI(ID : Integer): TGEItem;
@@ -74,14 +71,17 @@ var
 begin
   if not GEItemExists(ID) then Exit;
 
-  Path := ScriptPath + 'db\' + ToStr(ID) + '.ini';
+  Path := AppPath + 'Includes\db\' + ToStr(ID) + '.ini';
   try
-    Result.ID := StrToIntDef(ReadINI(ToStr(ID), 'ID', Path), -1);
-    Result.Price := StrToIntDef(ReadINI(ToStr(ID), 'Price', Path), -1);
-    Result.Name := ReadINI(ToStr(ID), 'Name', Path);
-    Result.BMP := BitmapFromString(32, 32, ReadINI(ToStr(ID), 'BMP', Path));
-    Result.BlackCount := StrToIntDef(ReadINI(ToStr(ID), 'BlackCount', Path), -1);
-    Result.AverageColor := StrToIntDef(ReadINI(ToStr(ID), 'AverageColor', Path), -1);
+  with Result do
+  begin
+    ID := StrToIntDef(ReadINI(ToStr(ID), 'ID', Path), -1);
+    Price := StrToIntDef(ReadINI(ToStr(ID), 'Price', Path), -1);
+    Name := ReadINI(ToStr(ID), 'Name', Path);
+    BMP := BitmapFromString(32, 32, ReadINI(ToStr(ID), 'BMP', Path));
+    BlackCount := StrToIntDef(ReadINI(ToStr(ID), 'BlackCount', Path), -1);
+    AverageColor := StrToIntDef(ReadINI(ToStr(ID), 'AverageColor', Path), -1);
+  end;
   except
   end;
 end;
@@ -90,7 +90,9 @@ procedure WriteGEItemINI(Item : TGEItem);
 var
   Path : string;
 begin
-  Path := ScriptPath + 'db\' + ToStr(Item.ID) + '.ini';
+  if not DirectoryExists(AppPath + 'Includes\DB') then
+    CreateDirectory(AppPath + 'Includes\DB');
+  Path := AppPath + 'Includes\db\' + ToStr(Item.ID) + '.ini';
   try
     with Item do
     begin
@@ -114,10 +116,10 @@ var
   FilterColors, FilterColorsTo : TIntegerArray;
 begin
   // URL to .gif of the item from runescape's GE
-  if DownloadFile('http://services.runescape.com/m=itemdb_rs/g=runescape/obj_sprite.gif?id=' + ToStr(ID), ScriptPath + 'db\' + ToStr(ID) + '.gif') then
+  if DownloadFile('http://services.runescape.com/m=itemdb_rs/g=runescape/obj_sprite.gif?id=' + ToStr(ID), AppPath + 'Includes\db\' + ToStr(ID) + '.gif') then
   begin
     Target := GetImageTarget;
-    BMP := LoadBitmap(ScriptPath + 'db\' + ToStr(ID) + '.gif');
+    BMP := LoadBitmap(AppPath + 'Includes\db\' + ToStr(ID) + '.gif');
     SetTargetBitmap(BMP);
     GetBitmapSize(BMP, W, H);
 

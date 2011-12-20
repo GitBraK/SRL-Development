@@ -1,0 +1,233 @@
+const
+  SEARCH_ID = 1381;
+
+
+
+{$i SRL/SRL.simba}
+
+type
+  TGEItem = record
+    ID, Price : Integer;
+    Name : string;
+    BMP : Integer;
+    BlackCount : Integer;
+    AverageColor : Integer;
+  end;
+
+function CashStringToInt(S: string): Integer;  //Thanks TomTuff!
+Var
+  i, ii: Integer;
+  Numbs: TStringArray;
+  Temp: string;
+begin
+  Temp := '';
+  Numbs := ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'k', 'm', 'b'];
+  for i := 1 to High(S) do
+    for ii := 0 to High(Numbs) do
+      if S[i] = Numbs[ii] then
+        case ii of
+          0..9: Temp := Temp + Numbs[ii];
+          10..12:
+          begin
+            Result := StrToInt(Temp);
+            case ii of
+              10: Result := Result * 100;        //Since price is given to 1 decimal,
+              11: Result := Result * 100000;     //instead of multiplying by the entire
+              12: Result := Result * 100000000;  //factor, you must multiply by factor/10
+            end;
+          end;
+        end;
+  if (Result = 0) then
+    try
+    Result := StrToInt(Temp);
+    except end;
+end;
+
+  // From Home's system
+function DownloadFile(FileLink, Path: String): Boolean;
+var
+  PageString: String;
+  iFile: Integer;
+begin
+  Result := False;
+  try
+    PageString := GetPage(FileLink);
+    if PageString = '' then Exit;
+    iFile := RewriteFile(Path, False);
+    Result := WriteFileString(iFile, PageString);
+    CloseFile(iFile);
+  except
+  end;
+end;
+
+
+
+
+function GEItemExists(ID : Integer): Boolean;
+begin
+  Result := FileExists(ScriptPath + 'db\' + ToStr(ID) + '.ini');
+end;
+
+function ReadGEItemINI(ID : Integer): TGEItem;
+var
+  Path : string;
+begin
+  if not GEItemExists(ID) then Exit;
+
+  Path := ScriptPath + 'db\' + ToStr(ID) + '.ini';
+  try
+    Result.ID := StrToIntDef(ReadINI(ToStr(ID), 'ID', Path), -1);
+    Result.Price := StrToIntDef(ReadINI(ToStr(ID), 'Price', Path), -1);
+    Result.Name := ReadINI(ToStr(ID), 'Name', Path);
+    Result.BMP := BitmapFromString(32, 32, ReadINI(ToStr(ID), 'BMP', Path));
+    Result.BlackCount := StrToIntDef(ReadINI(ToStr(ID), 'BlackCount', Path), -1);
+    Result.AverageColor := StrToIntDef(ReadINI(ToStr(ID), 'AverageColor', Path), -1);
+  except
+  end;
+end;
+
+procedure WriteGEItemINI(Item : TGEItem);
+var
+  Path : string;
+begin
+  Path := ScriptPath + 'db\' + ToStr(Item.ID) + '.ini';
+  try
+    with Item do
+    begin
+      WriteINI(ToStr(ID), 'ID', ToStr(ID), Path);
+      WriteINI(ToStr(ID), 'Price', ToStr(Price), Path);
+      WriteINI(ToStr(ID), 'Name', Name, Path);
+      WriteINI(ToStr(ID), 'BMP', CreateBitmapString(BMP), Path);
+      WriteINI(ToStr(ID), 'BlackCount', ToStr(BlackCount), Path);
+      WriteINI(ToStr(ID), 'AverageColor', ToStr(AverageColor), Path);
+    end;
+  except
+  end;
+end;
+
+  // Mostly from Home's system (99%)
+function GetGEItemBMPFromID(ID : Integer): Integer;
+var
+  I, J, W, H, BMP : Integer;
+  TPA : TPointArray;
+  Target : Integer;
+  FilterColors, FilterColorsTo : TIntegerArray;
+begin
+  // URL to .gif of the item from runescape's GE
+  if DownloadFile('http://services.runescape.com/m=itemdb_rs/g=runescape/obj_sprite.gif?id=' + ToStr(ID), ScriptPath + 'db\' + ToStr(ID) + '.gif') then
+  begin
+    Target := GetImageTarget;
+    BMP := LoadBitmap(ScriptPath + 'db\' + ToStr(ID) + '.gif');
+    SetTargetBitmap(BMP);
+    GetBitmapSize(BMP, W, H);
+
+    FilterColors   := [2171169, 526344,            460551];
+    FilterColorsTo := [0,       srl_outline_black, srl_outline_black];
+    for I := High(FilterColors) downto 0 do
+      if FindColors(TPA, FilterColors[I], 0, 0, W - 1, H - 1) then
+        for J := 0 to High(TPA) do
+          FastSetPixel(BMP, TPA[J].X, TPA[J].Y, FilterColorsTo[I]);
+
+    Result := BitmapFromClient(0, 0, W-1, H-1);
+
+    FreeTarget(GetImageTarget);
+    FreeBitmap(BMP);
+    SetImageTarget(Target);
+  end;
+end;
+
+function CreateGEItemFromIDEx(ID : Integer; Force : Boolean): TGEItem;
+var
+  S : string;
+  Target, W, H, I : Integer;
+  BoxTPA, TPA : TPointArray;
+  FilterColors : TIntegerArray;
+begin
+  if GEItemExists(ID) and not Force then
+  begin
+    Result := ReadGEItemINI(ID);
+    Exit;
+  end;
+
+  // URL to the item from runescape's GE
+  S := GetPage('http://services.runescape.com/m=itemdb_rs/g=runescape/viewitem.ws?obj=' + ToStr(ID));
+  Result.ID := ID;
+  with Result do
+  begin
+    Name := Replace(Between('<h5>', '</h5>', S), #10, '');
+    Price := CashStringToInt(Between('<td>', '<', Between('Current guide price', '/td>', S)));
+    BMP := GetGEItemBMPFromID(ID);
+
+    Target := GetImageTarget;
+    SetTargetBitmap(BMP);
+    GetBitmapSize(BMP, W, H);
+    FilterColors := [0, 2171169];
+    BoxTPA := TPAFromBox(IntToBox(0, 0, W-1, H-1));
+    for I := High(FilterColors) downto 0 do
+      if FindColors(TPA, FilterColors[I], 0, 0, W-1, H-1) then
+        BoxTPA := ClearTPAFromTPA(BoxTPA, TPA);
+    FindColors(TPA, srl_outline_black, 0, 0, W-1, H-1);
+
+    BlackCount := Length(TPA);
+    AverageColor := AverageTIA(GetColors(BoxTPA));
+
+    FreeTarget(GetImageTarget);
+    SetImageTarget(Target);
+  end;
+  WriteGEItemINI(Result);
+end;
+
+function CreateGEItemFromID(ID : Integer): TGEItem;
+begin
+  Result := CreateGEItemFromIDEx(ID, False);
+end;
+
+function LoadGEItemFromID(ID : Integer): TGEItem;
+begin
+  if GEItemExists(ID) then
+    Result := ReadGEItemINI(ID)
+end;
+
+function FindGEItem(var X, Y : Integer; ID : Integer): Boolean;
+var
+  Acc : Extended;
+  Item : TGEItem;
+  P : TPoint;
+begin
+  Result := False;
+  Item := LoadGEItemFromID(ID);
+
+  // BlackCount, AverageColor, etc...
+
+
+  {ClearDebugImg;
+  DrawBitmapDebugImg(Item.BMP);}
+  // Use this as last resort IMO
+  if FindDeformedBitmapToleranceIn(Item.BMP, P.X, P.Y, MIX1, MIY1, MIX2, MIY2, 25, 0, True, Acc) then
+    if Acc > 0.80 then
+    begin
+      Result := True;
+      FreeBitmap(Item.BMP);
+      P := ItemCoords(CoordsToItem(P.X, P.Y));
+      X := P.X; Y := P.Y;
+      Exit;
+    end;{ else
+      WriteLn(Acc);  }
+end;
+
+var
+  Item : TGEItem;
+  x, y : Integer;
+
+begin
+  SetupSRL;
+  MouseSpeed := 12;
+
+  Item := CreateGEItemFromIDEx(SEARCH_ID, True);
+  WriteLn(Item);
+  if FindGEItem(X, Y, Item.ID) then
+    MMouse(X-5, Y-5, 10, 10)
+  else
+    WriteLn('Did not find item');
+  FreeBitmap(Item.BMP);
+end.

@@ -3,6 +3,13 @@
 {$ELSE}
   {$i SRL/SRL.scar}
 {$ENDIF}
+{*******************************************************************************
+R_BOSS    Remote Based Objest Search System
+by: Home, Hobbit, Kyle Undefined, Zyt3x and BraK also known as Dev Team 6
+Description: System that automatically identifies and finds object in the
+inventory, bank, and the chat window.
+*******************************************************************************}
+
 
 type
   TGEItem = record
@@ -11,7 +18,34 @@ type
     BMP : Integer;
     BlackCount : Integer;
     AverageColor : Integer;
+    CommonColors :TIntegerArray;
   end;
+
+
+{*******************************************************************************
+function CommonColorsBMP(Bmp : Integer) :TIntegerArray;
+by: Dev Team 6
+Description: Takes 3 best colors for given BMP.
+*******************************************************************************}
+function CommonColorsBMP(Bmp : Integer) :TIntegerArray;
+var
+  Target, W, H, I, Hi, I2, Hi2, Hi3, C: integer;
+  ColArr, CountArr, Bestcolors, Tolerances :TIntegerArray;
+  T2DE: T2DExtendedArray;
+  T2DI: T2DIntegerArray;
+  TEA: TExtendedArray;
+  TPA :TPointArray;
+
+begin
+  GetBitmapSize(Bmp, W, H);
+  ColArr := FastGetPixels(BMP, TPAFromBox(IntToBox(0 ,0 , w - 1, h - 1)));
+  DrawBitmapDebugImg(Bmp);
+  for I := High(ColArr) downto 0 do
+    if InIntArray([2171169, 526344, 460551], ColArr[I]) then
+      DeleteValueInIntArray(ColArr, I);
+  GetColorArrayInfo(ColArr, Bestcolors, Tolerances, TEA, T2DI, T2DE, T2DE);
+  Result := Bestcolors;
+end;
 
 {*******************************************************************************
 function CashStringToInt(S : string) : Integer;
@@ -22,7 +56,7 @@ function CashStringToInt(S : string) : Integer;
 var
   i, ii : Integer;
   Numbs : TStringArray;
-  Temp  : string;
+  Temp : string;
 begin
   Temp := '';
   Numbs := ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'k', 'm', 'b'];
@@ -35,9 +69,9 @@ begin
           begin
             Result := StrToInt(Temp);
             case ii of
-              10: Result := Result * 100;        //Since price is given to 1 decimal,
-              11: Result := Result * 100000;     //instead of multiplying by the entire
-              12: Result := Result * 100000000;  //factor, you must multiply by factor/10
+              10: Result := Result * 100; //Since price is given to 1 decimal,
+              11: Result := Result * 100000; //instead of multiplying by the entire
+              12: Result := Result * 100000000; //factor, you must multiply by factor/10
             end;
           end;
         end;
@@ -49,7 +83,7 @@ end;
 
 {*******************************************************************************
 function DownloadFile(FileLink, Path : string) : Boolean;
-by: Home
+by: Dev Team 6
 Description: Downloads a file to a specified path
 *******************************************************************************}
 function DownloadFile(FileLink, Path : string) : Boolean;
@@ -70,7 +104,7 @@ end;
 
 {*******************************************************************************
 function GEItemExists(ID : Integer) : Boolean;
-by: Home
+by: Dev Team 6
 Description: Checks the local item DB to see if the item being requested exists
 *******************************************************************************}
 function GEItemExists(ID : Integer) : Boolean;
@@ -80,11 +114,12 @@ end;
 
 {*******************************************************************************
 function ReadGEItemINI(ID : Integer) : TGEItem;
-by: Home
+by: Dev Team 6
 Description: Reads the items .INI file and returns a TGEItem record
 *******************************************************************************}
 function ReadGEItemINI(ID : Integer) : TGEItem;
 var
+  I : Integer;
   Path : string;
 begin
   if(not(GEItemExists(ID)))then Exit;
@@ -99,6 +134,8 @@ begin
       BMP := BitmapFromString(32, 32, ReadINI(ToStr(ID), 'BMP', Path));
       BlackCount := StrToIntDef(ReadINI(ToStr(ID), 'BlackCount', Path), -1);
       AverageColor := StrToIntDef(ReadINI(ToStr(ID), 'AverageColor', Path), -1);
+      For I := 0 to 2 do
+        CommonColors[i] := StrToIntDef(ReadINI(ToStr(ID), 'CommonColors' + Inttostr(i), Path), -1);
     end;
   except
   end;
@@ -106,11 +143,12 @@ end;
 
 {*******************************************************************************
 procedure WriteGEItemINI(Item : TGEItem);
-by: Home
+by: Dev Team 6
 Description: Writes a .INI file for the TGEItem that is passed in
 *******************************************************************************}
 procedure WriteGEItemINI(Item : TGEItem);
 var
+  I : Integer;
   Path : string;
 begin
   if(not(DirectoryExists(AppPath + 'Includes\DB')))then
@@ -125,6 +163,8 @@ begin
       WriteINI(ToStr(ID), 'BMP', CreateBitmapString(BMP), Path);
       WriteINI(ToStr(ID), 'BlackCount', ToStr(BlackCount), Path);
       WriteINI(ToStr(ID), 'AverageColor', ToStr(AverageColor), Path);
+      For I := 0 to 2 do
+        WriteINI(ToStr(ID), 'CommonColors' + inttostr(i), ToStr(CommonColors[i]), Path);
     end;
   except
   end;
@@ -133,7 +173,7 @@ end;
 
 {*******************************************************************************
 function GetGEItemBMPFromID(ID : Integer) : Integer;
-by: Home
+by: Dev Team 6
 Description: Retrieves the .gif image from the GE
 *******************************************************************************}
 function GetGEItemBMPFromID(ID : Integer) : Integer;
@@ -151,7 +191,7 @@ begin
     SetTargetBitmap(BMP);
     GetBitmapSize(BMP, W, H);
 
-    FilterColors   := [2171169, 526344, 460551];
+    FilterColors := [2171169, 526344, 460551];
     FilterColorsTo := [0, srl_outline_black, srl_outline_black];
     for I := High(FilterColors) downto 0 do
       if(FindColors(TPA, FilterColors[I], 0, 0, W - 1, H - 1))then
@@ -168,7 +208,7 @@ end;
 
 {*******************************************************************************
 function CreateGEItemFromIDEx(ID : Integer; Force : Boolean) : TGEItem;
-by: Home
+by: Dev Team 6
 Description: Creates an TGEItem for the ID that is passed in. If Force is set
              to True, the current .gif image and .INI files will be rewriten
 *******************************************************************************}
@@ -206,6 +246,7 @@ begin
 
     BlackCount := Length(TPA);
     AverageColor := AverageTIA(GetColors(BoxTPA));
+    CommonColors := CommonColorsBMP(BMP);
 
     FreeTarget(GetImageTarget);
     SetImageTarget(Target);
@@ -215,7 +256,7 @@ end;
 
 {*******************************************************************************
 function CreateGEItemFromID(ID : Integer) : TGEItem;
-by: Home
+by: Dev Team 6
 Description: Creates an TGEItem for the ID passed in, and disables Force
 *******************************************************************************}
 function CreateGEItemFromID(ID : Integer) : TGEItem;
@@ -225,7 +266,7 @@ end;
 
 {*******************************************************************************
 function LoadGEItemFromID(ID : Integer) : TGEItem;
-by: Home
+by: Dev Team 6
 Description: Loads an TGEItem record from the local DB of items
 *******************************************************************************}
 function LoadGEItemFromID(ID : Integer) : TGEItem;
@@ -236,7 +277,7 @@ end;
 
 {*******************************************************************************
 function FindGEItem(var X, Y : Integer; ID : Integer) : Boolean;
-by: Home
+by: Dev Team 6
 Description: Searches the Inventory for the item and set the X, Y variables to
              the coordinates if found
 *******************************************************************************}
@@ -264,11 +305,11 @@ begin
       X := P.X; Y := P.Y;
       Exit;
     end;{ else
-      WriteLn(Acc);  }
+      WriteLn(Acc); }
 end;
 
 {//////////////////////////////////////////////////////////////////////////////}
-//                                TESTING                                     //
+// TESTING //
 {//////////////////////////////////////////////////////////////////////////////}
 var
   Item : TGEItem;

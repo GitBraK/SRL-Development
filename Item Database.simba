@@ -9,7 +9,7 @@ by: Home, Hobbit, Kyle Undefined, Zyt3x and BraK also known as Dev Team 6
 Description: System that automatically identifies and finds object in the
 inventory, bank, and the chat window.
 *******************************************************************************}
-
+// To DO Check Sat, CommonCOlors
 
 type
   TGEItem = record
@@ -19,6 +19,11 @@ type
     BlackCount : Integer;
     AverageColor : Integer;
     CommonColors :TIntegerArray;
+    BestColor : Integer;
+    Tolerance : Integer;
+    Hue : Extended;
+    Sat : Extended;
+    BestColorCount : Integer;
   end;
 
 
@@ -27,25 +32,70 @@ function CommonColorsBMP(Bmp : Integer) :TIntegerArray;
 by: Dev Team 6
 Description: Takes 3 best colors for given BMP.
 *******************************************************************************}
-function CommonColorsBMP(Bmp : Integer) :TIntegerArray;
+function GetColorsBMP(BMP : Integer; BadColors : TIntegerArray): TIntegerArray;
 var
-  Target, W, H, I, Hi, I2, Hi2, Hi3, C: integer;
-  ColArr, CountArr, Bestcolors, Tolerances :TIntegerArray;
-  T2DE: T2DExtendedArray;
-  T2DI: T2DIntegerArray;
-  TEA: TExtendedArray;
-  TPA :TPointArray;
+  W, H, I, J, C : Integer;
+  Target : Integer;
+  ColArr, CountArr : TIntegerArray;
+begin
+  GetBitmapSize(BMP, W, H);
+
+  ColArr := GetColorsBox(0, 0, W-1, H-1, True);
+  ClearSameIntegers(ColArr);
+  for I := High(ColArr) downto 0 do
+    if InIntArray(BadColors, ColArr[I]) then
+      DeleteValueInIntArray(ColArr, I);
+
+  SetLength(CountArr, Length(ColArr));
+  for I := High(CountArr) downto 0 do
+    CountArr[I] := CountColor(ColArr[I], 0, 0, W-1, H-1);
+  QuickSort(CountArr);
+  InvertTIA(CountArr);
+
+  SetLength(Result, Length(ColArr));
+  for I := High(ColArr) downto 0 do
+    for J := High(CountArr) downto 0 do
+      if CountColor(ColArr[I], 0, 0, W-1, H-1) = CountArr[J] then
+      begin
+        Result[C] := ColArr[I];
+        Inc(C);
+        DeleteValueInIntArray(CountArr, J);
+        Break;
+      end;
+  SetLength(Result, 3);
+end;
+
+
+procedure ModifyColors(Colors :TIntegerArray; var Color, Tol :Integer; var Hue, Sat :Extended);
+var
+  I,II : integer;
+  HSLColor : Array[1..3] of Extended;
+  HSL : Array[0..1] of Array[1..3] of Extended;
 
 begin
-  GetBitmapSize(Bmp, W, H);
-  ColArr := FastGetPixels(BMP, TPAFromBox(IntToBox(0 ,0 , w - 1, h - 1)));
-  DrawBitmapDebugImg(Bmp);
-  for I := High(ColArr) downto 0 do
-    if InIntArray([2171169, 526344, 460551], ColArr[I]) then
-      DeleteValueInIntArray(ColArr, I);
-  GetColorArrayInfo(ColArr, Bestcolors, Tolerances, TEA, T2DI, T2DE, T2DE);
-  Result := Bestcolors;
+  For I := 1 to 3 do
+    HSL[0][i] := 255;
+  For I := 0 to High(Colors) do
+  begin;
+    ColortoHSL(Colors[i],HSLColor[1],HSLColor[2],HSLColor[3]);
+    For II := 1 to 3 do
+    begin
+      HSL[0][II] := MinE(HSLColor[II],HSL[0][II]);
+      HSL[1][II] := MaxE(HSLColor[II],HSL[1][II]);
+    end;
+  Color := HSLToColor((HSL[1][1] + HSL[0][1]) div 2,(HSL[1][2] + HSL[0][2]) div 2,(HSL[1][3] + HSL[0][3]) div 2);
+  Tol := Ceil((HSL[1][3])) - Ceil((HSL[1][3] + HSL[0][3]) div 2) + 2;
+  try
+  Hue := (HSL[1][1] - HSL[0][1]) / (HSL[1][3] - HSL[0][3]);
+  except end;
+  try
+  Sat := (HSL[1][2] - HSL[0][2]) / (HSL[1][3] - HSL[0][3]);
+  except end;
+  end;
 end;
+
+
+
 
 {*******************************************************************************
 function CashStringToInt(S : string) : Integer;
@@ -136,6 +186,11 @@ begin
       AverageColor := StrToIntDef(ReadINI(ToStr(ID), 'AverageColor', Path), -1);
       For I := 0 to 2 do
         CommonColors[i] := StrToIntDef(ReadINI(ToStr(ID), 'CommonColors' + Inttostr(i), Path), -1);
+      BestColor := StrToIntDef(ReadINI(ToStr(ID), 'AverageColor', Path), -1);
+      Tolerance := StrToIntDef(ReadINI(ToStr(ID), 'AverageColor', Path), -1);
+      Hue := StrToIntDef(ReadINI(ToStr(ID), 'AverageColor', Path), -1);
+      Sat := StrToIntDef(ReadINI(ToStr(ID), 'AverageColor', Path), -1);
+      BestColorCount := StrToIntDef(ReadINI(ToStr(ID), 'BestColorCount', Path), -1);
     end;
   except
   end;
@@ -165,6 +220,11 @@ begin
       WriteINI(ToStr(ID), 'AverageColor', ToStr(AverageColor), Path);
       For I := 0 to 2 do
         WriteINI(ToStr(ID), 'CommonColors' + inttostr(i), ToStr(CommonColors[i]), Path);
+      WriteINI(ToStr(ID), 'BestColor', ToStr(BestColor), Path);
+      WriteINI(ToStr(ID), 'Tolerance', ToStr(Tolerance), Path);
+      WriteINI(ToStr(ID), 'Hue', ToStr(Hue), Path);
+      WriteINI(ToStr(ID), 'Sat', ToStr(Sat), Path);
+      WriteINI(ToStr(ID), 'BestColorCount', ToStr(BestColorCount), Path);
     end;
   except
   end;
@@ -215,7 +275,7 @@ Description: Creates an TGEItem for the ID that is passed in. If Force is set
 function CreateGEItemFromIDEx(ID : Integer; Force : Boolean) : TGEItem;
 var
   S : string;
-  Target, W, H, I : Integer;
+  TmpCTS, Target, W, H, I : Integer;
   BoxTPA, TPA : TPointArray;
   FilterColors : TIntegerArray;
 begin
@@ -246,7 +306,14 @@ begin
 
     BlackCount := Length(TPA);
     AverageColor := AverageTIA(GetColors(BoxTPA));
-    CommonColors := CommonColorsBMP(BMP);
+    CommonColors := GetColorsBMP(BMP, [2171169, 526344, 460551, 0]);
+    ModifyColors(CommonColors, BestColor, Tolerance, Hue, Sat);
+
+    TmpCTS := GetColorToleranceSpeed
+    SetColorToleranceSpeed(2);
+    SetColorspeed2Modifiers(Hue, Sat);
+    FindColorsTolerance(TPA, BestColor, 0, 0, W - 1, H - 1, Tolerance);
+    BestColorCount := Length(TPA);
 
     FreeTarget(GetImageTarget);
     SetImageTarget(Target);
@@ -293,8 +360,8 @@ begin
   // BlackCount, AverageColor, etc...
 
 
-  {ClearDebugImg;
-  DrawBitmapDebugImg(Item.BMP);}
+  ClearDebugImg;
+  DrawBitmapDebugImg(Item.BMP);
   // Use this as last resort IMO
   if(FindDeformedBitmapToleranceIn(Item.BMP, P.X, P.Y, MIX1, MIY1, MIX2, MIY2, 25, 0, True, Acc))then
     if(Acc > 0.80)then
@@ -308,22 +375,89 @@ begin
       WriteLn(Acc); }
 end;
 
+
+function SortTIAFrom(TIA :TIntegerArray; From :Integer) :TIntegerArray;
+var
+  TPA :TPointArray;
+  Hi, I :Integer;
+begin
+  Hi := Length(TIA);
+  for I := 0 to Hi - 1 do
+  begin
+    SetLength(TPA, I + 1);
+    TPA[I].X := 0;
+    TPA[I].Y := TIA[I];
+  end;
+  SortTPAFrom(TPA, Point(0, From));
+  for I := 0 to Hi - 1 do
+    TIA[I] := TPA[I].Y;
+  Result := TIA;
+end;
+
+
+function TestItem(ID : Integer) : Boolean;
+var
+  Item : TGEItem;
+  ItemBox : TBox;
+  MiddlePoint : TPoint;
+  CloseCountArr, CountArr :TIntegerArray;
+  ClosestCount, T, I, a, CTS, TotalCount :Integer;
+  TPA :TPointArray;
+  aTPA :T2DPointArray;
+begin
+  Result := False;
+  Item := CreateGEItemFromIDEx(114, True);
+  //Item := LoadGEItemFromID(ID);
+  writeln(Item);
+
+  SetColorToleranceSpeed(2);
+  SetColorspeed2Modifiers(Item.Hue, Item.Sat);
+  MarkTime(T);
+  FindColorsTolerance(TPA, Item.BestColor, MIX1, MIY1, MIX2, MIY2, Item.Tolerance)
+  aTPA := TPAtoATPAEx(TPA, 7, 7);
+  Writeln(Length(aTPA));
+  for I := 0 to High(aTPA) do
+  begin
+    MiddlePoint := MiddleTPA(aTPA[I]);
+    ItemBox := InvBox(CoordsToItem(MiddlePoint.X, MiddlePoint.Y));
+    FindColorsTolerance(TPA, Item.BestColor, ItemBox.X1, ItemBox.Y1, ItemBox.X2, ItemBox.Y2, Item.Tolerance)
+    Writeln(Length(TPA));
+    SetLength(CountArr, I + 1);
+    CountArr[I] := Length(TPA);
+  end;
+
+  CloseCountArr := SortTIAFrom(CountArr, Item.BestColorCount);
+  for I := 0 to High(aTPA) do
+  begin
+    MiddlePoint := MiddleTPA(aTPA[I]);
+    ItemBox := InvBox(CoordsToItem(MiddlePoint.X, MiddlePoint.Y));
+    FindColorsTolerance(TPA, Item.BestColor, ItemBox.X1, ItemBox.Y1, ItemBox.X2, ItemBox.Y2, Item.Tolerance)
+    If Length(TPA) = CloseCountArr[0] then
+      MMouse(MiddlePoint.X, MiddlePoint.Y, 0, 0);
+  end;
+end;
+
+
+
+
 {//////////////////////////////////////////////////////////////////////////////}
 // TESTING //
 {//////////////////////////////////////////////////////////////////////////////}
 var
-  Item : TGEItem;
+  //Item : TGEItem;
   x, y : Integer;
 
 begin
   SetupSRL;
-  MouseSpeed := 12;
+  MouseSpeed := 15;
 
-  Item := CreateGEItemFromIDEx(1381, True);
-  WriteLn(Item);
-  if(FindGEItem(X, Y, Item.ID))then
+  ClearDebugImg;
+  TestItem(1381);
+
+
+  {if(FindGEItem(X, Y, Item.ID))then
     MMouse(X-5, Y-5, 10, 10)
   else
-    WriteLn('Did not find item');
-  FreeBitmap(Item.BMP);
+    WriteLn('Did not find item');}
+  //FreeBitmap(Item.BMP);
 end.

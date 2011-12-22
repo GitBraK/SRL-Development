@@ -7,9 +7,17 @@
 R_BOSS    Remote Based Objest Search System
 by: Home, Hobbit, Kyle Undefined, Zyt3x and BraK also known as Dev Team 6
 Description: System that automatically identifies and finds object in the
-inventory, bank, and the chat window.
+inventory and bank
 *******************************************************************************}
 // To DO Check Sat, CommonCOlors
+
+{//////////////////////////////////////////////////////////////////////////////}
+{///      IMPORTANT                 REMINDER                 IMPORTANT      ///}
+{//////////////////////////////////////////////////////////////////////////////}
+{/// *Don't put finding functions after the Main finder it has to be last.  ///}
+{/// *Edit the Main finder with your separate Find functions.               ///}
+{/// *Don't forget to add Docs to your created functions Explaining them.   ///}
+{//////////////////////////////////////////////////////////////////////////////}
 
 type
   TGEItem = record
@@ -443,57 +451,6 @@ begin
     end;
 end;
 
-{*******************************************************************************
-function FindGEItem(var X, Y : Integer; ID : Integer, Inv : Boolean) : Boolean;
-by: Dev Team 6
-Description: Searches for the item and set the X, Y variables to the coordinates
-             if found. Uses True to search the Inventory and False to search the
-             Bank. Updates the BlackList data for the Item as needed.
-*******************************************************************************}
-Function FindGEItem(var X, Y : Integer; ID : Integer; Inv : Boolean) : Boolean;
-var
-  BLBool : Boolean;
-  I : Integer;
-  Item : TGEItem;
-
-begin
-  Result := False;
-  Item := LoadGEItemFromID(ID);
-
-  Try
-  for I := 0 to 3 do
-  begin
-    Case I of
-      0 : If Item.BlackCount > 0 then
-            if FindItemBL(X, Y, Item.BlackCount, Inv) then
-            begin
-              Result := True;
-              exit;
-            end;
-
-     // 1 : Result := CCC;
-
-     // 2 : Result := CTS2;
-
-      3 : Result := FindItemBMP(X, Y, Item.BMP, Inv);
-    end;
-    if Result then
-    begin
-      if I = 0 then
-        BLBool := true;
-      exit;
-    end;
-  end;
-  Finally
-    if not(BLBool) then
-    begin
-      Item.BlackCount := GetBLFromPoint(x, y);
-      WriteGEItemINI(Item);
-    end;
-  end;
-end;
-
-
 function SortTIAFrom(TIA :TIntegerArray; From :Integer) :TIntegerArray;
 var
   TPA :TPointArray;
@@ -664,6 +621,56 @@ begin
     FindColorsTolerance(TPA, Item.BestColor, ItemBox.X1, ItemBox.Y1, ItemBox.X2, ItemBox.Y2, Item.Tolerance)
     If Length(TPA) = CloseCountArr[0] then
       MMouse(MiddlePoint.X, MiddlePoint.Y, 0, 0);
+  end;
+end;
+
+{*******************************************************************************
+function FindGEItem(var X, Y : Integer; ID : Integer, Inv : Boolean) : Boolean;
+by: Dev Team 6
+Description: Searches for the item and set the X, Y variables to the coordinates
+             if found. Uses True to search the Inventory and False to search the
+             Bank. Updates the BlackList data for the Item as needed.
+*******************************************************************************}
+Function FindGEItem(var X, Y : Integer; ID : Integer; Inv : Boolean) : Boolean;
+var
+  BLBool : Boolean;
+  I : Integer;
+  Item : TGEItem;
+
+begin
+  Result := False;
+  Item := LoadGEItemFromID(ID);
+
+  Try
+  for I := 0 to 3 do
+  begin
+    Case I of
+      0 : If Item.BlackCount > 0 then
+            if FindItemBL(X, Y, Item.BlackCount, Inv) then
+            begin
+              Result := True;
+              exit;
+            end;
+
+     // 1 : Result := CCC;
+
+     // 2 : Result := CTS2;
+
+      3 : Result := FindItemBMP(X, Y, Item.BMP, Inv);
+    end;
+    if Result then
+    begin
+      if I = 0 then
+        BLBool := true;
+      exit;
+    end;
+  end;
+  Finally
+    if not(BLBool) then
+    begin
+      Item.BlackCount := GetBLFromPoint(x, y);
+      WriteGEItemINI(Item);
+    end;
   end;
 end;
 

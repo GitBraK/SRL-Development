@@ -513,6 +513,118 @@ begin
 end;
 
 
+function GetBankScrollPos: Integer;
+var
+  cts : Integer;
+begin
+  Result := 1;
+  cts := GetColorToleranceSpeed;
+  ColorToleranceSpeed(1);
+
+  if SimilarColors(GetColor(490, 104), 4610402, 3) or SimilarColors(GetColor(490, 104), 2830904, 3) then
+    Result := 0
+  else if SimilarColors(GetColor(490, 274), 3951700, 3) then
+    Result := 2;
+
+  ColorToleranceSpeed(cts);
+end;
+
+procedure SetBankScrollPos(Top : Boolean);
+begin
+  if Top and (GetBankScrollPos <> 0) then
+    Mouse(482, 104, 12, 6, True)
+  else if (not Top) and (GetBankScrollPos <> 2) then
+    Mouse(482, 266, 12, 6, True)
+  else
+    Exit;
+
+  Wait(750 + Random(200));
+end;
+
+function BankBox(Index : Integer): TBox;
+begin
+  with Result do
+  begin
+    if (GetBankScrollPos = 1) then
+      SetBankScrollPos(True);
+
+    case GetBankScrollPos of
+      0: Y1 := 92;
+      1: Exit;
+      2: Y1 := 116;
+    end;
+
+    X1 := 38 + (((Index - 1) mod 10) * 44);
+    Y1 := Y1 + (((Index - 1) div 10) * 44);
+    X2 := X1 + 35;
+    Y2 := Y1 + 31;
+  end;
+end;
+
+function CoordsToBank(X, Y: Integer): Integer;
+var
+  tmpBox: TBox;
+begin
+  if not PointInBox(Point(X, Y), IntToBox(MBX1, MBY1, MBX2, MBY2)) then exit;
+  for Result := 1 to 10 do
+  begin
+    tmpBox := BankBox(result);
+    if InRange(X, tmpBox.x1, tmpBox.x2) then break;
+  end;
+  while (not InRange(Y, tmpBox.y1, tmpBox.y2)) do
+  begin
+    IncEx(Result, 10);
+    if (Result > 50) then
+      Break;
+    tmpBox := BankBox(Result);
+  end;
+  if (not PointInBox(Point(X, Y), tmpBox)) then
+    Result := 0;
+end;
+
+function FindItemCC(var X, Y : Integer; colors : TIntegerArray; Inv : Boolean) : Boolean;
+var
+  i, a : Integer;
+  TPA  : TPointArray;
+  ATPA : T2DPointArray;
+  MP   : TPoint;
+  Box, ItemBox : TBox;
+begin
+  for i := 0 to High(colors) do
+  begin
+    if(Inv)then
+      Box := IntToBox(MIX1, MIY1, MIX2, MIY2)
+    else
+      Box := IntToBox(MBX1, MBY1, MBX2, MBY2);
+    WriteLn('FindItemCC.colors[' + IntToStr(i) + '] := ' + IntToStr(colors[i]));
+    if(FindColors(TPA, colors[i], Box.X1, Box.Y1, Box.X2, Box.Y2))then
+    begin
+      WriteLn('FindItemCC.FindColors.TPA.Length := ' + IntToStr(Length(TPA)));
+      ATPA := TPAtoATPAEx(TPA, 7, 7);
+      WriteLn('FindItemCC.FindColors.TPA.ATPA.Length := ' + IntToStr(Length(ATPA)));
+      for a := 0 to High(ATPA) do
+      begin
+        MP := MiddleTPA(ATPA[a]);
+        WriteLn('FindItemCC.FindColors.TPA.ATPA.MP.X := ' + IntToStr(MP.X));
+        WriteLn('FindItemCC.FindColors.TPA.ATPA.MP.Y := ' + IntToStr(MP.Y));
+        if(Inv)then
+          ItemBox := InvBox(CoordsToItem(MP.X, MP.Y))
+        else
+          ItemBox := BankBox(CoordsToItem(MP.X, MP.Y));
+        FindColors(TPA, colors[i], ItemBox.X1, ItemBox.Y1, ItemBox.X2, ItemBox.Y2);
+        WriteLn('FindItemCC.FindColors.TPA.ATPA.MP.FindColors.TPA.Length := ' + IntToStr(Length(TPA)));
+        if(Length(TPA) > 0)then
+        begin
+          X := MP.X; Y := MP.Y;
+          Result := True;
+          Exit;
+        end;
+      end;
+    end;
+  end;
+end;
+
+
 function TestItem(ID : Integer) : Boolean;
 var
   Item : TGEItem;

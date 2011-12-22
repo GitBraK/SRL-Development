@@ -343,36 +343,154 @@ begin
 end;
 
 {*******************************************************************************
-function FindGEItem(var X, Y : Integer; ID : Integer) : Boolean;
+function FindItemBMP(var X, Y : Integer; ItemBMP : Integer; Inv : Boolean) : Boolean;
 by: Dev Team 6
-Description: Searches the Inventory for the item and set the X, Y variables to
-             the coordinates if found
+Description: Searches for the item and sets the X, Y variables to the coordinates
+             if found. Use True to search the Inventory and False to search the
+             Bank.
 *******************************************************************************}
-function FindGEItem(var X, Y : Integer; ID : Integer) : Boolean;
+function FindItemBMP(var X, Y : Integer; ItemBMP : Integer; Inv : Boolean) : Boolean;
 var
   Acc : Extended;
-  Item : TGEItem;
+  TB : TBox;
   P : TPoint;
+begin
+  if Inv then
+    TB := IntToBox(MIX1, MIY1, MIX2, MIY2)
+  else
+    TB := IntToBox(MBX1, MBY1, MBX2, MBY2);
+  if(FindDeformedBitmapToleranceIn(ItemBMP, P.X, P.Y, TB.X1, TB.Y1, TB.X2, TB.Y2, 25, 0, True, Acc))then
+    if(Acc > 0.80)then
+    begin
+      Result := True;
+      FreeBitmap(ItemBMP);
+      P := ItemCoords(CoordsToItem(P.X, P.Y));
+      X := P.X; Y := P.Y;
+      Exit;
+    end;
+end;
+
+{*******************************************************************************
+function GetItemBL(var Box : TBox) : Integer;
+by: Dev Team 6
+Description: Gets the Blacklist count for the specified TBox.
+*******************************************************************************}
+function GetItemBL(var Box : TBox) : Integer;
+begin
+  Result := CountColor(131072, Box.X1, Box.Y1 + 17, Box.X2, Box.Y2);
+end;
+
+{*******************************************************************************
+function FindItemBL(Var X, Y :Integer; Count : Integer; Inv : Boolean) : Boolean;
+by: Dev Team 6
+Description: Searches the screen for the item with the correct BL count and
+             returns the x, y coordinates of the Item. Use True to search the
+             Inventory and False to search the Bank.
+*******************************************************************************}
+function FindItemBL(Var X, Y :Integer; Count : Integer; Inv : Boolean) : Boolean;
+var
+  I, NumberSlots : Integer;
+  TB : TBox;
+  P : TPoint;
+begin
+  if Inv then
+    NumberSlots := 28
+  else
+    NumberSlots := 50;
+  For I := 1 to NumberSlots do
+  begin
+    if Inv then
+      TB := InvBox(I)
+    else
+      TB := BankIndexToMSBox(I);
+    if Count = GetItemBL(TB) then
+    begin
+      Result := True;
+      P := MiddleTPA(TPAFromBox(TB));
+      X := P.X; Y := P.Y;
+      Break;
+    end;
+  end;
+end;
+
+{*******************************************************************************
+function GetBLFromPoint(x, y : Integer) : Integer;
+by: Dev Team 6
+Description: Finds the Slot for X, Y coordinates if found. It outputs the
+             blacklist data for the Item.
+*******************************************************************************}
+Function GetBLFromPoint(x, y : Integer) : Integer;
+var
+  I : Integer;
+  TB : TBox;
+begin
+  If PointInBox(Point(x, y), IntToBox(MIX1, MIY1, MIX2, MIY2)) then
+  begin
+    For I := 1 to 28 do
+      if PointInBox(Point(x, y), InvBox(i)) then
+      begin
+        TB := InvBox(i);
+        Result := GetItemBL(TB);
+        Break;
+      end;
+  end else
+  For I := 1 to 50 do
+    if PointInBox(Point(x, y), IntToBox(MBX1, MBY1, MBX2, MBY2)) then
+    begin
+      TB := BankIndexToMSBox(i);
+      Result := GetItemBL(TB);
+      Break;
+    end;
+end;
+
+{*******************************************************************************
+function FindGEItem(var X, Y : Integer; ID : Integer, Inv : Boolean) : Boolean;
+by: Dev Team 6
+Description: Searches for the item and set the X, Y variables to the coordinates
+             if found. Uses True to search the Inventory and False to search the
+             Bank. Updates the BlackList data for the Item as needed.
+*******************************************************************************}
+Function FindGEItem(var X, Y : Integer; ID : Integer; Inv : Boolean) : Boolean;
+var
+  BLBool : Boolean;
+  I : Integer;
+  Item : TGEItem;
+
 begin
   Result := False;
   Item := LoadGEItemFromID(ID);
 
-  // BlackCount, AverageColor, etc...
+  Try
+  for I := 0 to 3 do
+  begin
+    Case I of
+      0 : If Item.BlackCount > 0 then
+            if FindItemBL(X, Y, Item.BlackCount, Inv) then
+            begin
+              Result := True;
+              exit;
+            end;
 
+     // 1 : Result := CCC;
 
-  ClearDebugImg;
-  DrawBitmapDebugImg(Item.BMP);
-  // Use this as last resort IMO
-  if(FindDeformedBitmapToleranceIn(Item.BMP, P.X, P.Y, MIX1, MIY1, MIX2, MIY2, 25, 0, True, Acc))then
-    if(Acc > 0.80)then
+     // 2 : Result := CTS2;
+
+      3 : Result := FindItemBMP(X, Y, Item.BMP, Inv);
+    end;
+    if Result then
     begin
-      Result := True;
-      FreeBitmap(Item.BMP);
-      P := ItemCoords(CoordsToItem(P.X, P.Y));
-      X := P.X; Y := P.Y;
-      Exit;
-    end;{ else
-      WriteLn(Acc); }
+      if I = 0 then
+        BLBool := true;
+      exit;
+    end;
+  end;
+  Finally
+    if not(BLBool) then
+    begin
+      Item.BlackCount := GetBLFromPoint(x, y);
+      WriteGEItemINI(Item);
+    end;
+  end;
 end;
 
 

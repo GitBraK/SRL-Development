@@ -161,44 +161,44 @@ begin
 end;
 
 {*******************************************************************************
-function GEItemExists(ID : Integer) : Boolean;
+function GEItemExists(itemID : Integer) : Boolean;
 by: Dev Team 6
 Description: Checks the local item DB to see if the item being requested exists
 *******************************************************************************}
-function GEItemExists(ID : Integer) : Boolean;
+function GEItemExists(itemID : Integer) : Boolean;
 begin
-  Result := FileExists(AppPath + 'Includes\db\' + ToStr(ID) + '.ini');
+  Result := FileExists(AppPath + 'Includes\db\' + ToStr(itemID) + '.ini');
 end;
 
 {*******************************************************************************
-function ReadGEItemINI(ID : Integer) : TGEItem;
+function ReadGEItemINI(itemID : Integer) : TGEItem;
 by: Dev Team 6
 Description: Reads the items .INI file and returns a TGEItem record
 *******************************************************************************}
-function ReadGEItemINI(ID : Integer) : TGEItem;
+function ReadGEItemINI(itemID : Integer) : TGEItem;
 var
   I : Integer;
   Path : string;
 begin
-  if(not(GEItemExists(ID)))then Exit;
+  if(not(GEItemExists(itemID)))then Exit;
 
-  Path := AppPath + 'Includes\db\' + ToStr(ID) + '.ini';
+  Path := AppPath + 'Includes\db\' + ToStr(itemID) + '.ini';
   try
     with Result do
     begin
-      ID := StrToIntDef(ReadINI(ToStr(ID), 'ID', Path), -1);
-      Price := StrToIntDef(ReadINI(ToStr(ID), 'Price', Path), -1);
-      Name := ReadINI(ToStr(ID), 'Name', Path);
-      BMP := BitmapFromString(32, 32, ReadINI(ToStr(ID), 'BMP', Path));
-      BlackCount := StrToIntDef(ReadINI(ToStr(ID), 'BlackCount', Path), -1);
-      AverageColor := StrToIntDef(ReadINI(ToStr(ID), 'AverageColor', Path), -1);
+      ID := StrToIntDef(ReadINI(ToStr(itemID), 'ID', Path), -1);
+      Price := StrToIntDef(ReadINI(ToStr(itemID), 'Price', Path), -1);
+      Name := ReadINI(ToStr(itemID), 'Name', Path);
+      BMP := BitmapFromString(32, 32, ReadINI(ToStr(itemID), 'BMP', Path));
+      BlackCount := StrToIntDef(ReadINI(ToStr(itemID), 'BlackCount', Path), -1);
+      AverageColor := StrToIntDef(ReadINI(ToStr(itemID), 'AverageColor', Path), -1);
       For I := 0 to 2 do
-        CommonColors[i] := StrToIntDef(ReadINI(ToStr(ID), 'CommonColors' + Inttostr(i), Path), -1);
-      BestColor := StrToIntDef(ReadINI(ToStr(ID), 'AverageColor', Path), -1);
-      Tolerance := StrToIntDef(ReadINI(ToStr(ID), 'AverageColor', Path), -1);
-      Hue := StrToIntDef(ReadINI(ToStr(ID), 'AverageColor', Path), -1);
-      Sat := StrToIntDef(ReadINI(ToStr(ID), 'AverageColor', Path), -1);
-      BestColorCount := StrToIntDef(ReadINI(ToStr(ID), 'BestColorCount', Path), -1);
+        CommonColors[i] := StrToIntDef(ReadINI(ToStr(itemID), 'CommonColors' + Inttostr(i), Path), -1);
+      BestColor := StrToIntDef(ReadINI(ToStr(itemID), 'AverageColor', Path), -1);
+      Tolerance := StrToIntDef(ReadINI(ToStr(itemID), 'AverageColor', Path), -1);
+      Hue := StrToIntDef(ReadINI(ToStr(itemID), 'AverageColor', Path), -1);
+      Sat := StrToIntDef(ReadINI(ToStr(itemID), 'AverageColor', Path), -1);
+      BestColorCount := StrToIntDef(ReadINI(ToStr(itemID), 'BestColorCount', Path), -1);
     end;
   except
   end;
@@ -240,11 +240,11 @@ end;
 
 
 {*******************************************************************************
-function GetGEItemBMPFromID(ID : Integer) : Integer;
+function GetGEItemBMPFromID(itemID : Integer) : Integer;
 by: Dev Team 6
 Description: Retrieves the .gif image from the GE
 *******************************************************************************}
-function GetGEItemBMPFromID(ID : Integer) : Integer;
+function GetGEItemBMPFromID(itemID : Integer) : Integer;
 var
   I, J, W, H, BMP : Integer;
   TPA : TPointArray;
@@ -252,10 +252,10 @@ var
   FilterColors, FilterColorsTo : TIntegerArray;
 begin
   // URL to .gif of the item from runescape's GE
-  if DownloadFile('http://services.runescape.com/m=itemdb_rs/g=runescape/obj_sprite.gif?id=' + ToStr(ID), AppPath + 'Includes\DB\' + ToStr(ID) + '.gif') then
+  if DownloadFile('http://services.runescape.com/m=itemdb_rs/g=runescape/obj_sprite.gif?id=' + ToStr(itemID), AppPath + 'Includes\DB\' + ToStr(itemID) + '.gif') then
   begin
     Target := GetImageTarget;
-    BMP := LoadBitmap(AppPath + 'Includes\DB\' + ToStr(ID) + '.gif');
+    BMP := LoadBitmap(AppPath + 'Includes\DB\' + ToStr(itemID) + '.gif');
     SetTargetBitmap(BMP);
     GetBitmapSize(BMP, W, H);
 
@@ -275,32 +275,32 @@ begin
 end;
 
 {*******************************************************************************
-function CreateGEItemFromIDEx(ID : Integer; Force : Boolean) : TGEItem;
+function CreateGEItemFromIDEx(itemID : Integer; Force : Boolean) : TGEItem;
 by: Dev Team 6
 Description: Creates an TGEItem for the ID that is passed in. If Force is set
              to True, the current .gif image and .INI files will be rewriten
 *******************************************************************************}
-function CreateGEItemFromIDEx(ID : Integer; Force : Boolean) : TGEItem;
+function CreateGEItemFromIDEx(itemID : Integer; Force : Boolean) : TGEItem;
 var
   S : string;
   TmpCTS, Target, W, H, I : Integer;
   BoxTPA, TPA : TPointArray;
   FilterColors : TIntegerArray;
 begin
-  if(GEItemExists(ID) and (not(Force)))then
+  if(GEItemExists(itemID) and (not(Force)))then
   begin
-    Result := ReadGEItemINI(ID);
+    Result := ReadGEItemINI(itemID);
     Exit;
   end;
 
   // URL to the item from runescape's GE
-  S := GetPage('http://services.runescape.com/m=itemdb_rs/g=runescape/viewitem.ws?obj=' + ToStr(ID));
-  Result.ID := ID;
+  S := GetPage('http://services.runescape.com/m=itemdb_rs/g=runescape/viewitem.ws?obj=' + ToStr(itemID));
   with Result do
   begin
+    ID := itemID;
     Name := Replace(Between('<h5>', '</h5>', S), #10, '');
     Price := CashStringToInt(Between('<td>', '<', Between('Current guide price', '/td>', S)));
-    BMP := GetGEItemBMPFromID(ID);
+    BMP := GetGEItemBMPFromID(itemID);
 
     Target := GetImageTarget;
     SetTargetBitmap(BMP);
@@ -330,24 +330,24 @@ begin
 end;
 
 {*******************************************************************************
-function CreateGEItemFromID(ID : Integer) : TGEItem;
+function CreateGEItemFromID(itemID : Integer) : TGEItem;
 by: Dev Team 6
 Description: Creates an TGEItem for the ID passed in, and disables Force
 *******************************************************************************}
-function CreateGEItemFromID(ID : Integer) : TGEItem;
+function CreateGEItemFromID(itemID : Integer) : TGEItem;
 begin
-  Result := CreateGEItemFromIDEx(ID, False);
+  Result := CreateGEItemFromIDEx(itemID, False);
 end;
 
 {*******************************************************************************
-function LoadGEItemFromID(ID : Integer) : TGEItem;
+function LoadGEItemFromID(itemID : Integer) : TGEItem;
 by: Dev Team 6
 Description: Loads an TGEItem record from the local DB of items
 *******************************************************************************}
-function LoadGEItemFromID(ID : Integer) : TGEItem;
+function LoadGEItemFromID(itemID : Integer) : TGEItem;
 begin
-  if(GEItemExists(ID))then
-    Result := ReadGEItemINI(ID)
+  if(GEItemExists(itemID))then
+    Result := ReadGEItemINI(itemID)
 end;
 
 {*******************************************************************************
@@ -561,7 +561,9 @@ end;
 {*******************************************************************************
 function FindItemCC(var X, Y : Integer; colors : TIntegerArray; Inv : Boolean) : Boolean;
 by: Dev Team 6
-Description:
+Description: Searches either your bank or inventory for the common colors
+             that are created from the GE image at runtime, and returns the
+             X, Y coords if the tem was found
 *******************************************************************************}
 function FindItemCC(var X, Y : Integer; colors : TIntegerArray; Inv : Boolean) : Boolean;
 var
@@ -571,12 +573,14 @@ var
   MP   : TPoint;
   Box, ItemBox : TBox;
 begin
+  if(Inv)then
+    Box := IntToBox(MIX1, MIY1, MIX2, MIY2)
+  else
+    Box := IntToBox(MSX1, MSY1, MSX2, MSY2);
+  WriteLn('FindItemCC.Inv := ' + BoolToStr(Inv));
+  WriteLn('FindItemCC.Box := ' + IntToStr(Box.X1) + ', ' + IntToStr(Box.Y1) + ', ' + IntToStr(Box.X2) + ', ' + IntToStr(Box.Y2));
   for i := 0 to High(colors) do
   begin
-    if(Inv)then
-      Box := IntToBox(MIX1, MIY1, MIX2, MIY2)
-    else
-      Box := IntToBox(MBX1, MBY1, MBX2, MBY2);
     WriteLn('FindItemCC.colors[' + IntToStr(i) + '] := ' + IntToStr(colors[i]));
     if(FindColors(TPA, colors[i], Box.X1, Box.Y1, Box.X2, Box.Y2))then
     begin
@@ -591,7 +595,7 @@ begin
         if(Inv)then
           ItemBox := InvBox(CoordsToItem(MP.X, MP.Y))
         else
-          ItemBox := BankBox(CoordsToItem(MP.X, MP.Y));
+          ItemBox := BankBox(CoordsToBank(MP.X, MP.Y));
         FindColors(TPA, colors[i], ItemBox.X1, ItemBox.Y1, ItemBox.X2, ItemBox.Y2);
         WriteLn('FindItemCC.FindColors.TPA.ATPA.MP.FindColors.TPA.Length := ' + IntToStr(Length(TPA)));
         if(Length(TPA) > 0)then
@@ -606,7 +610,7 @@ begin
 end;
 
 
-function TestItem(ID : Integer) : Boolean;
+function TestItem(itemID : Integer) : Boolean;
 var
   Item : TGEItem;
   ItemBox : TBox;
@@ -617,8 +621,8 @@ var
   aTPA :T2DPointArray;
 begin
   Result := False;
-  Item := CreateGEItemFromIDEx(114, True);
-  //Item := LoadGEItemFromID(ID);
+  Item := CreateGEItemFromIDEx(itemID, True);
+  //Item := LoadGEItemFromID(itemID);
   writeln(Item);
 
   SetColorToleranceSpeed(2);
@@ -649,13 +653,13 @@ begin
 end;
 
 {*******************************************************************************
-function FindGEItem(var X, Y : Integer; ID : Integer, Inv : Boolean) : Boolean;
+function FindGEItem(var X, Y : Integer; itemID : Integer, Inv : Boolean) : Boolean;
 by: Dev Team 6
 Description: Searches for the item and set the X, Y variables to the coordinates
              if found. Uses True to search the Inventory and False to search the
              Bank. Updates the BlackList data for the Item as needed.
 *******************************************************************************}
-Function FindGEItem(var X, Y : Integer; ID : Integer; Inv : Boolean) : Boolean;
+Function FindGEItem(var X, Y : Integer; itemID : Integer; Inv : Boolean) : Boolean;
 var
   BLBool : Boolean;
   I : Integer;
@@ -663,7 +667,7 @@ var
 
 begin
   Result := False;
-  Item := LoadGEItemFromID(ID);
+  Item := LoadGEItemFromID(itemID);
 
   Try
   for I := 0 to 3 do
@@ -676,7 +680,11 @@ begin
               exit;
             end;
 
-     // 1 : Result := CCC;
+      1 : if(FindItemCC(x, y, Item.CommonColors, Inv))then
+          begin
+            Result := True;
+            exit;
+          end;
 
      // 2 : Result := CTS2;
 
@@ -705,15 +713,20 @@ end;
 // TESTING //
 {//////////////////////////////////////////////////////////////////////////////}
 var
-  //Item : TGEItem;
+  Item : TGEItem;
   x, y : Integer;
 
 begin
   SetupSRL;
+  ClearDebug();
   MouseSpeed := 15;
 
   ClearDebugImg;
-  TestItem(1381);
+  Item := CreateGEItemFromIDEx(1275, True);
+
+  if(FindItemCC(x, y, Item.CommonColors, True))then
+    MMouse(x-5, y-5, 10, 10);
+  //TestItem(1275);
 
 
   {if(FindGEItem(X, Y, Item.ID))then

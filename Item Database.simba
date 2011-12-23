@@ -469,7 +469,11 @@ begin
   Result := TIA;
 end;
 
-
+{*******************************************************************************
+function GetBankScrollPos() : Integer;
+by: Dev Team 6
+Description: Gets the position of the bank scroll bar
+*******************************************************************************}
 function GetBankScrollPos: Integer;
 var
   cts : Integer;
@@ -486,6 +490,11 @@ begin
   ColorToleranceSpeed(cts);
 end;
 
+{*******************************************************************************
+procedure SetBankScrollPos(Top : Boolean);
+by: Dev Team 6
+Description: Sets the position of the bank scroll bar
+*******************************************************************************}
 procedure SetBankScrollPos(Top : Boolean);
 begin
   if Top and (GetBankScrollPos <> 0) then
@@ -498,6 +507,11 @@ begin
   Wait(750 + Random(200));
 end;
 
+{*******************************************************************************
+function BankBox(Index : Integer) : TBox;
+by: Dev Team 6
+Description: Returns the box coords of a given bank slot
+*******************************************************************************}
 function BankBox(Index : Integer): TBox;
 begin
   with Result do
@@ -518,6 +532,11 @@ begin
   end;
 end;
 
+{*******************************************************************************
+function CoordsToBank(X, Y: Integer) : Integer;
+by: Dev Team 6
+Description: Takes a X/Y coord and converts them into a bank slot
+*******************************************************************************}
 function CoordsToBank(X, Y: Integer): Integer;
 var
   tmpBox: TBox;
@@ -539,6 +558,11 @@ begin
     Result := 0;
 end;
 
+{*******************************************************************************
+function FindItemCC(var X, Y : Integer; colors : TIntegerArray; Inv : Boolean) : Boolean;
+by: Dev Team 6
+Description:
+*******************************************************************************}
 function FindItemCC(var X, Y : Integer; colors : TIntegerArray; Inv : Boolean) : Boolean;
 var
   i, a : Integer;

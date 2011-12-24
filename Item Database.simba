@@ -34,6 +34,8 @@ type
     BestColorCount : Integer;
   end;
 
+var
+  TItemArray : Array of TGEItem;
 
 {*******************************************************************************
 function CommonColorsBMP(Bmp : Integer) :TIntegerArray;
@@ -246,7 +248,8 @@ end;
 {*******************************************************************************
 function GetGEItemBMPFromID(itemID : Integer) : Integer;
 by: Dev Team 6
-Description: Retrieves the .gif image from the GE
+Description: Retrieves the .gif image from the GE. Exits if it fails to get a
+             proper Image.
 *******************************************************************************}
 function GetGEItemBMPFromID(itemID : Integer) : Integer;
 var
@@ -258,6 +261,7 @@ begin
   // URL to .gif of the item from runescape's GE
   if DownloadFile('http://services.runescape.com/m=itemdb_rs/g=runescape/obj_sprite.gif?id=' + ToStr(itemID), AppPath + 'Includes\DB\' + ToStr(itemID) + '.gif') then
   begin
+    if bmp = 0 then exit; // Exits if it fails to get proper Image
     Target := GetImageTarget;
     BMP := LoadBitmap(AppPath + 'Includes\DB\' + ToStr(itemID) + '.gif');
     SetTargetBitmap(BMP);
@@ -663,6 +667,33 @@ begin
 end;
 
 {*******************************************************************************
+function LoadItems(IDArray : TIntegerArray) : Boolean;
+by: Dev Team 6
+Description: Loads the specified Items into the TIntegerArray. Returns False if
+             it fails to load all Items.
+*******************************************************************************}
+function LoadItems(IDArray : TIntegerArray) : Boolean;
+var
+  Failed : TIntegerArray;
+  I, II, III : Integer;
+begin
+  SetArrayLength(TItemArray, Length(IDArray));
+  For I := 0 to High(IDArray) do
+  begin
+    TItemArray[I - II] := CreateGEItemFromID(IDArray[I]);
+    if TItemArray[I - II].Name = '' then
+    begin
+      SetArrayLength(Failed, Length(Failed) + 1);
+      Failed[length(Failed) - 1] := IDArray[i];
+      Inc(II);
+      SetArrayLength(TItemArray, Length(TItemArray) - 1);
+    end;
+  end;
+  DebugLn('Failed to load these IDs := ' + tostr(Failed));
+  result := (Length(TItemArray) > 0);
+end;
+
+{*******************************************************************************
 function FindGEItem(var X, Y : Integer; itemID : Integer, Inv : Boolean) : Boolean;
 by: Dev Team 6
 Description: Searches for the item and set the X, Y variables to the coordinates
@@ -677,8 +708,9 @@ var
 
 begin
   Result := False;
-  Item := CreateGEItemFromID(itemID);
-
+  for I := 0 to High(TItemArray) do
+  if TItemArray[i].ID = itemID then
+    Item := TItemArray[i];
   Try
   for I := 0 to 3 do
   begin
@@ -710,9 +742,6 @@ begin
   end;
 end;
 
-
-
-
 {//////////////////////////////////////////////////////////////////////////////}
 // TESTING //
 {//////////////////////////////////////////////////////////////////////////////}
@@ -724,18 +753,6 @@ begin
   SetupSRL;
   ClearDebug();
   MouseSpeed := 15;
-
-  ClearDebugImg;
-
-  if(FindGEItem(x, y, 1381, True))then
-    MMouse(x-5, y-5, 10, 10);
-  //TestItem(1275);
-
-
-  {if(FindGEItem(X, Y, Item.ID))then
-    MMouse(X-5, Y-5, 10, 10)
-  else
-    WriteLn('Did not find item');}
-  //FreeBitmap(Item.BMP);
+  writeln('did we load Items := ' + tostr(LoadItems([1275, 1383, 3, 9])));  //Testing New LoadItems function :)
+  writeln('Currently Loaded Items := ' + Tostr(TItemArray));                //Printing then loaded Items :D
 end.
-

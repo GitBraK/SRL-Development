@@ -40,10 +40,9 @@ function CommonColorsBMP(Bmp : Integer) :TIntegerArray;
 by: Dev Team 6
 Description: Takes 3 best colors for given BMP.
 *******************************************************************************}
-function GetColorsBMP(BMP : Integer; BadColors : TIntegerArray): TIntegerArray;
+function GetColorsBMP(BMP : Integer; BadColors : TIntegerArray) : TIntegerArray;
 var
   W, H, I, J, C : Integer;
-  Target : Integer;
   ColArr, CountArr : TIntegerArray;
 begin
   GetBitmapSize(BMP, W, H);
@@ -73,7 +72,11 @@ begin
   SetLength(Result, 3);
 end;
 
-
+{*******************************************************************************
+procedure ModifyColors(Colors :TIntegerArray; var Color, Tol :Integer; var Hue, Sat :Extended);
+by: Dev Team 6
+Description: Takes an array of colors and returns the CTS2 Information.
+*******************************************************************************}
 procedure ModifyColors(Colors :TIntegerArray; var Color, Tol :Integer; var Hue, Sat :Extended);
 var
   I,II : integer;
@@ -194,10 +197,10 @@ begin
       AverageColor := StrToIntDef(ReadINI(ToStr(itemID), 'AverageColor', Path), -1);
       For I := 0 to 2 do
         CommonColors[i] := StrToIntDef(ReadINI(ToStr(itemID), 'CommonColors' + Inttostr(i), Path), -1);
-      BestColor := StrToIntDef(ReadINI(ToStr(itemID), 'AverageColor', Path), -1);
-      Tolerance := StrToIntDef(ReadINI(ToStr(itemID), 'AverageColor', Path), -1);
-      Hue := StrToIntDef(ReadINI(ToStr(itemID), 'AverageColor', Path), -1);
-      Sat := StrToIntDef(ReadINI(ToStr(itemID), 'AverageColor', Path), -1);
+      BestColor := StrToIntDef(ReadINI(ToStr(itemID), 'BestColor', Path), -1);
+      Tolerance := StrToIntDef(ReadINI(ToStr(itemID), 'Tolerance', Path), -1);
+      Hue := StrToFloatDef(ReadINI(ToStr(itemID), 'Hue', Path), -1);
+      Sat := StrToFloatDef(ReadINI(ToStr(itemID), 'Sat', Path), -1);
       BestColorCount := StrToIntDef(ReadINI(ToStr(itemID), 'BestColorCount', Path), -1);
     end;
   except
@@ -224,7 +227,8 @@ begin
       WriteINI(ToStr(ID), 'Price', ToStr(Price), Path);
       WriteINI(ToStr(ID), 'Name', Name, Path);
       WriteINI(ToStr(ID), 'BMP', CreateBitmapString(BMP), Path);
-      WriteINI(ToStr(ID), 'BlackCount', ToStr(BlackCount), Path);
+      if Item.BlackCount > 0 then
+        WriteINI(ToStr(ID), 'BlackCount', ToStr(BlackCount), Path);
       WriteINI(ToStr(ID), 'AverageColor', ToStr(AverageColor), Path);
       For I := 0 to 2 do
         WriteINI(ToStr(ID), 'CommonColors' + inttostr(i), ToStr(CommonColors[i]), Path);
@@ -295,6 +299,7 @@ begin
 
   // URL to the item from runescape's GE
   S := GetPage('http://services.runescape.com/m=itemdb_rs/g=runescape/viewitem.ws?obj=' + ToStr(itemID));
+
   with Result do
   begin
     ID := itemID;
@@ -310,13 +315,9 @@ begin
     for I := High(FilterColors) downto 0 do
       if(FindColors(TPA, FilterColors[I], 0, 0, W-1, H-1))then
         BoxTPA := ClearTPAFromTPA(BoxTPA, TPA);
-    FindColors(TPA, srl_outline_black, 0, 0, W-1, H-1);
-
-    BlackCount := Length(TPA);
     AverageColor := AverageTIA(GetColors(BoxTPA));
     CommonColors := GetColorsBMP(BMP, [2171169, 526344, 460551, 0]);
     ModifyColors(CommonColors, BestColor, Tolerance, Hue, Sat);
-
     TmpCTS := GetColorToleranceSpeed
     SetColorToleranceSpeed(2);
     SetColorspeed2Modifiers(Hue, Sat);
@@ -326,6 +327,7 @@ begin
     FreeTarget(GetImageTarget);
     SetImageTarget(Target);
   end;
+
   WriteGEItemINI(Result);
 end;
 
@@ -374,6 +376,7 @@ begin
       FreeBitmap(ItemBMP);
       P := ItemCoords(CoordsToItem(P.X, P.Y));
       X := P.X; Y := P.Y;
+      DebugLn('Item found using Bitmaps.');
       Exit;
     end;
 end;
@@ -395,7 +398,7 @@ Description: Searches the screen for the item with the correct BL count and
              returns the x, y coordinates of the Item. Use True to search the
              Inventory and False to search the Bank.
 *******************************************************************************}
-function FindItemBL(Var X, Y :Integer; Count : Integer; Inv : Boolean) : Boolean;
+function FindItemBL(Var X, Y : Integer; Count : Integer; Inv : Boolean) : Boolean;
 var
   I, NumberSlots : Integer;
   TB : TBox;
@@ -416,6 +419,7 @@ begin
       Result := True;
       P := MiddleTPA(TPAFromBox(TB));
       X := P.X; Y := P.Y;
+      DebugLn('Item found using Black List.');
       Break;
     end;
   end;
@@ -451,10 +455,15 @@ begin
     end;
 end;
 
-function SortTIAFrom(TIA :TIntegerArray; From :Integer) :TIntegerArray;
+{*******************************************************************************
+function SortTIAFrom(TIA : TIntegerArray; From : Integer) : TIntegerArray;
+by: Dev Team 6
+Description: Sorts a color array to the closest color.
+*******************************************************************************}
+function SortTIAFrom(TIA : TIntegerArray; From : Integer) : TIntegerArray;
 var
-  TPA :TPointArray;
-  Hi, I :Integer;
+  TPA : TPointArray;
+  Hi, I : Integer;
 begin
   Hi := Length(TIA);
   for I := 0 to Hi - 1 do
@@ -474,7 +483,7 @@ function GetBankScrollPos() : Integer;
 by: Dev Team 6
 Description: Gets the position of the bank scroll bar
 *******************************************************************************}
-function GetBankScrollPos: Integer;
+function GetBankScrollPos : Integer;
 var
   cts : Integer;
 begin
@@ -537,9 +546,9 @@ function CoordsToBank(X, Y: Integer) : Integer;
 by: Dev Team 6
 Description: Takes a X/Y coord and converts them into a bank slot
 *******************************************************************************}
-function CoordsToBank(X, Y: Integer): Integer;
+function CoordsToBank(X, Y : Integer): Integer;
 var
-  tmpBox: TBox;
+  tmpBox : TBox;
 begin
   if not PointInBox(Point(X, Y), IntToBox(MBX1, MBY1, MBX2, MBY2)) then exit;
   for Result := 1 to 10 do
@@ -577,31 +586,32 @@ begin
     Box := IntToBox(MIX1, MIY1, MIX2, MIY2)
   else
     Box := IntToBox(MSX1, MSY1, MSX2, MSY2);
-  WriteLn('FindItemCC.Inv := ' + BoolToStr(Inv));
-  WriteLn('FindItemCC.Box := ' + IntToStr(Box.X1) + ', ' + IntToStr(Box.Y1) + ', ' + IntToStr(Box.X2) + ', ' + IntToStr(Box.Y2));
+  DebugLn('FindItemCC.Inv := ' + BoolToStr(Inv));
+  DebugLn('FindItemCC.Box := ' + IntToStr(Box.X1) + ', ' + IntToStr(Box.Y1) + ', ' + IntToStr(Box.X2) + ', ' + IntToStr(Box.Y2));
   for i := 0 to High(colors) do
   begin
-    WriteLn('FindItemCC.colors[' + IntToStr(i) + '] := ' + IntToStr(colors[i]));
+    DebugLn('FindItemCC.colors[' + IntToStr(i) + '] := ' + IntToStr(colors[i]));
     if(FindColors(TPA, colors[i], Box.X1, Box.Y1, Box.X2, Box.Y2))then
     begin
-      WriteLn('FindItemCC.FindColors.TPA.Length := ' + IntToStr(Length(TPA)));
+      DebugLn('FindItemCC.FindColors.TPA.Length := ' + IntToStr(Length(TPA)));
       ATPA := TPAtoATPAEx(TPA, 7, 7);
-      WriteLn('FindItemCC.FindColors.TPA.ATPA.Length := ' + IntToStr(Length(ATPA)));
+      DebugLn('FindItemCC.FindColors.TPA.ATPA.Length := ' + IntToStr(Length(ATPA)));
       for a := 0 to High(ATPA) do
       begin
         MP := MiddleTPA(ATPA[a]);
-        WriteLn('FindItemCC.FindColors.TPA.ATPA.MP.X := ' + IntToStr(MP.X));
-        WriteLn('FindItemCC.FindColors.TPA.ATPA.MP.Y := ' + IntToStr(MP.Y));
+        DebugLn('FindItemCC.FindColors.TPA.ATPA.MP.X := ' + IntToStr(MP.X));
+        DebugLn('FindItemCC.FindColors.TPA.ATPA.MP.Y := ' + IntToStr(MP.Y));
         if(Inv)then
           ItemBox := InvBox(CoordsToItem(MP.X, MP.Y))
         else
           ItemBox := BankBox(CoordsToBank(MP.X, MP.Y));
         FindColors(TPA, colors[i], ItemBox.X1, ItemBox.Y1, ItemBox.X2, ItemBox.Y2);
-        WriteLn('FindItemCC.FindColors.TPA.ATPA.MP.FindColors.TPA.Length := ' + IntToStr(Length(TPA)));
+        DebugLn('FindItemCC.FindColors.TPA.ATPA.MP.FindColors.TPA.Length := ' + IntToStr(Length(TPA)));
         if(Length(TPA) > 0)then
         begin
           X := MP.X; Y := MP.Y;
           Result := True;
+          DebugLn('Item found using Common Colors.');
           Exit;
         end;
       end;
@@ -615,15 +625,15 @@ var
   Item : TGEItem;
   ItemBox : TBox;
   MiddlePoint : TPoint;
-  CloseCountArr, CountArr :TIntegerArray;
-  ClosestCount, T, I, a, CTS, TotalCount :Integer;
-  TPA :TPointArray;
-  aTPA :T2DPointArray;
+  CloseCountArr, CountArr : TIntegerArray;
+  T, I : Integer;
+  TPA : TPointArray;
+  aTPA : T2DPointArray;
 begin
   Result := False;
   Item := CreateGEItemFromIDEx(itemID, True);
   //Item := LoadGEItemFromID(itemID);
-  writeln(Item);
+  WriteLn(Item);
 
   SetColorToleranceSpeed(2);
   SetColorspeed2Modifiers(Item.Hue, Item.Sat);
@@ -667,24 +677,16 @@ var
 
 begin
   Result := False;
-  Item := LoadGEItemFromID(itemID);
+  Item := CreateGEItemFromID(itemID);
 
   Try
   for I := 0 to 3 do
   begin
     Case I of
       0 : If Item.BlackCount > 0 then
-            if FindItemBL(X, Y, Item.BlackCount, Inv) then
-            begin
-              Result := True;
-              exit;
-            end;
+            Result := FindItemBL(X, Y, Item.BlackCount, Inv);
 
-      1 : if(FindItemCC(x, y, Item.CommonColors, Inv))then
-          begin
-            Result := True;
-            exit;
-          end;
+      1 : Result := FindItemCC(x, y, Item.CommonColors, Inv);
 
      // 2 : Result := CTS2;
 
@@ -692,16 +694,18 @@ begin
     end;
     if Result then
     begin
-      if I = 0 then
+      if I > 0 then
         BLBool := true;
-      exit;
+      break;
     end;
   end;
   Finally
-    if not(BLBool) then
+    if BLBool then
     begin
+      debugln('Updated Black List Information for ID #' + IntToStr(Item.ID) + '.');
       Item.BlackCount := GetBLFromPoint(x, y);
-      WriteGEItemINI(Item);
+      DeleteINI(ToStr(Item.ID), 'BlackCount', AppPath + 'Includes\DB\' + ToStr(Item.ID) + '.ini');
+      WriteINI(ToStr(Item.ID), 'BlackCount', ToStr(Item.BlackCount), AppPath + 'Includes\DB\' + ToStr(Item.ID) + '.ini');
     end;
   end;
 end;
@@ -722,9 +726,8 @@ begin
   MouseSpeed := 15;
 
   ClearDebugImg;
-  Item := CreateGEItemFromIDEx(1275, True);
 
-  if(FindItemCC(x, y, Item.CommonColors, True))then
+  if(FindGEItem(x, y, 1381, True))then
     MMouse(x-5, y-5, 10, 10);
   //TestItem(1275);
 
@@ -735,3 +738,4 @@ begin
     WriteLn('Did not find item');}
   //FreeBitmap(Item.BMP);
 end.
+

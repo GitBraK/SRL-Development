@@ -186,25 +186,22 @@ var
   Path : string;
 begin
   if(not(GEItemExists(itemID)))then Exit;
-
-  Path := AppPath + 'Includes\db\' + ToStr(itemID) + '.ini';
+  SetArrayLength(result.CommonColors, 3);
+  Path := AppPath + 'Includes/db/' + ToStr(itemID) + '.ini';
   try
-    with Result do
-    begin
-      ID := StrToIntDef(ReadINI(ToStr(itemID), 'ID', Path), -1);
-      Price := StrToIntDef(ReadINI(ToStr(itemID), 'Price', Path), -1);
-      Name := ReadINI(ToStr(itemID), 'Name', Path);
-      BMP := BitmapFromString(32, 32, ReadINI(ToStr(itemID), 'BMP', Path));
-      BlackCount := StrToIntDef(ReadINI(ToStr(itemID), 'BlackCount', Path), -1);
-      AverageColor := StrToIntDef(ReadINI(ToStr(itemID), 'AverageColor', Path), -1);
-      For I := 0 to 2 do
-        CommonColors[i] := StrToIntDef(ReadINI(ToStr(itemID), 'CommonColors' + Inttostr(i), Path), -1);
-      BestColor := StrToIntDef(ReadINI(ToStr(itemID), 'BestColor', Path), -1);
-      Tolerance := StrToIntDef(ReadINI(ToStr(itemID), 'Tolerance', Path), -1);
-      Hue := StrToFloatDef(ReadINI(ToStr(itemID), 'Hue', Path), -1);
-      Sat := StrToFloatDef(ReadINI(ToStr(itemID), 'Sat', Path), -1);
-      BestColorCount := StrToIntDef(ReadINI(ToStr(itemID), 'BestColorCount', Path), -1);
-    end;
+    Result.ID := StrToIntDef(ReadINI(ToStr(itemID), 'ID', Path), -1);
+    Result.Price := StrToIntDef(ReadINI(ToStr(itemID), 'Price', Path), -1);
+    Result.Name := ReadINI(ToStr(itemID), 'Name', Path);
+    Result.BMP := BitmapFromString(32, 32, ReadINI(ToStr(itemID), 'BMP', Path));
+    Result.BlackCount := StrToIntDef(ReadINI(ToStr(itemID), 'BlackCount', Path), -1);
+    Result.AverageColor := StrToIntDef(ReadINI(ToStr(itemID), 'AverageColor', Path), -1);
+    For I := 0 to 2 do
+      Result.CommonColors[i] := StrToIntDef(ReadINI(ToStr(itemID), 'CommonColors' + Inttostr(i), Path), -1);
+    Result.BestColor := StrToIntDef(ReadINI(ToStr(itemID), 'BestColor', Path), -1);
+    Result.Tolerance := StrToIntDef(ReadINI(ToStr(itemID), 'Tolerance', Path), -1);
+    Result.Hue := StrToFloatDef(ReadINI(ToStr(itemID), 'Hue', Path), -1);
+    Result.Sat := StrToFloatDef(ReadINI(ToStr(itemID), 'Sat', Path), -1);
+    Result.BestColorCount := StrToIntDef(ReadINI(ToStr(itemID), 'BestColorCount', Path), -1);
   except
   end;
 end;
@@ -261,26 +258,25 @@ begin
   // URL to .gif of the item from runescape's GE
   if DownloadFile('http://services.runescape.com/m=itemdb_rs/g=runescape/obj_sprite.gif?id=' + ToStr(itemID), AppPath + 'Includes\DB\' + ToStr(itemID) + '.gif') then
   begin
-    if bmp = 0 then exit; // Exits if it fails to get proper Image
+    Debugln('Bitmap #' + IntToStr(BMP));
     Target := GetImageTarget;
     BMP := LoadBitmap(AppPath + 'Includes\DB\' + ToStr(itemID) + '.gif');
     SetTargetBitmap(BMP);
     GetBitmapSize(BMP, W, H);
-
     FilterColors := [2171169, 526344, 460551];
     FilterColorsTo := [0, srl_outline_black, srl_outline_black];
     for I := High(FilterColors) downto 0 do
       if(FindColors(TPA, FilterColors[I], 0, 0, W - 1, H - 1))then
         for J := 0 to High(TPA) do
           FastSetPixel(BMP, TPA[J].X, TPA[J].Y, FilterColorsTo[I]);
-
     Result := BitmapFromClient(0, 0, W-1, H-1);
-
     FreeTarget(GetImageTarget);
     FreeBitmap(BMP);
     SetImageTarget(Target);
   end;
 end;
+
+
 
 {*******************************************************************************
 function CreateGEItemFromIDEx(itemID : Integer; Force : Boolean) : TGEItem;

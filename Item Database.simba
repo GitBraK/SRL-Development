@@ -37,6 +37,23 @@ type
 var
   TItemArray : Array of TGEItem;
 
+//Temp function til simba gets the bug fixed.
+function FixedSumIntegerArray(const Ints : TIntegerArray): Int64;
+var
+  I, H: Integer;
+begin
+  Result := 0;
+  H := High(Ints);
+  for I := 0 to H do
+    Result := Result + Ints[I];
+end;
+
+//Temp function til simba gets the bug fixed.
+function FixedAverageTIA(const tI : TIntegerArray): Int64;
+begin
+  try Result := (FixedSumIntegerArray(tI) div Length(tI)); except Result := 0; end;
+end;
+
 {*******************************************************************************
 function CommonColorsBMP(Bmp : Integer) :TIntegerArray;
 by: Dev Team 6
@@ -106,9 +123,6 @@ begin
   except end;
   end;
 end;
-
-
-
 
 {*******************************************************************************
 function CashStringToInt(S : string) : Integer;
@@ -241,7 +255,6 @@ begin
   end;
 end;
 
-
 {*******************************************************************************
 function GetGEItemBMPFromID(itemID : Integer) : Integer;
 by: Dev Team 6
@@ -276,8 +289,6 @@ begin
   end;
 end;
 
-
-
 {*******************************************************************************
 function CreateGEItemFromIDEx(itemID : Integer; Force : Boolean) : TGEItem;
 by: Dev Team 6
@@ -306,7 +317,6 @@ begin
     Name := Replace(Between('<h5>', '</h5>', S), #10, '');
     Price := CashStringToInt(Between('<td>', '<', Between('Current guide price', '/td>', S)));
     BMP := GetGEItemBMPFromID(itemID);
-
     Target := GetImageTarget;
     SetTargetBitmap(BMP);
     GetBitmapSize(BMP, W, H);
@@ -315,7 +325,7 @@ begin
     for I := High(FilterColors) downto 0 do
       if(FindColors(TPA, FilterColors[I], 0, 0, W-1, H-1))then
         BoxTPA := ClearTPAFromTPA(BoxTPA, TPA);
-    AverageColor := AverageTIA(GetColors(BoxTPA));
+    AverageColor := FixedAverageTIA(GetColors(BoxTPA)); // Added as a temp fix till simba gets it fixed
     CommonColors := GetColorsBMP(BMP, [2171169, 526344, 460551, 0]);
     ModifyColors(CommonColors, BestColor, Tolerance, Hue, Sat);
     TmpCTS := GetColorToleranceSpeed
@@ -323,7 +333,6 @@ begin
     SetColorspeed2Modifiers(Hue, Sat);
     FindColorsTolerance(TPA, BestColor, 0, 0, W - 1, H - 1, Tolerance);
     BestColorCount := Length(TPA);
-
     FreeTarget(GetImageTarget);
     SetImageTarget(Target);
   end;
@@ -593,7 +602,7 @@ begin
     DebugLn('FindItemCC.colors[' + IntToStr(i) + '] := ' + IntToStr(colors[i]));
     if(FindColors(TPA, colors[i], Box.X1, Box.Y1, Box.X2, Box.Y2))then
     begin
-      DebugLn('FindItemCC.FindColors.TPA.Length := ' + IntToStr(Length(TPA)));
+      DebugLn('FindItemCC.FindColors.TPA.LengtAverageColor := FixedAverageTIA(GetColors(BoxTPA));h := ' + IntToStr(Length(TPA)));
       ATPA := TPAtoATPAEx(TPA, 7, 7);
       DebugLn('FindItemCC.FindColors.TPA.ATPA.Length := ' + IntToStr(Length(ATPA)));
       for a := 0 to High(ATPA) do
@@ -663,6 +672,19 @@ begin
 end;
 
 {*******************************************************************************
+Procedure FreeItemBMPArray;
+by: Dev Team 6
+Description: Loops through the TItemArray Freeing all Bitmaps.
+*******************************************************************************}
+Procedure FreeItemBMPArray;
+var
+  I : Integer;
+begin
+  For I := 0 to High(TItemArray) do
+    FreeBitmap(TItemArray[i].BMP);
+end;
+
+{*******************************************************************************
 function LoadItems(IDArray : TIntegerArray) : Boolean;
 by: Dev Team 6
 Description: Loads the specified Items into the TIntegerArray. Returns False if
@@ -687,6 +709,7 @@ begin
   end;
   DebugLn('Failed to load these IDs := ' + tostr(Failed));
   result := (Length(TItemArray) > 0);
+  AddOnTerminate('FreeItemBMPArray');
 end;
 
 {*******************************************************************************
@@ -716,7 +739,7 @@ begin
 
       1 : Result := FindItemCC(x, y, Item.CommonColors, Inv);
 
-     // 2 : Result := CTS2;
+     // 2 : Result := CTS2;  // This needs to be added still.
 
       3 : Result := FindItemBMP(X, Y, Item.BMP, Inv);
     end;
@@ -749,6 +772,6 @@ begin
   SetupSRL;
   ClearDebug();
   MouseSpeed := 15;
-  writeln('did we load Items := ' + tostr(LoadItems([1275, 1383, 3, 9])));  //Testing New LoadItems function :)
+  writeln('did we load Items := ' + tostr(LoadItems([1275, 1383, 2, 1381])));  //Testing New LoadItems function :)
   writeln('Currently Loaded Items := ' + Tostr(TItemArray));                //Printing then loaded Items :D
 end.

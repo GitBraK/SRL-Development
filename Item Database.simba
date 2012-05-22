@@ -1,15 +1,15 @@
-{$IFDEF SRL5}
-  {$i SRL/SRL.simba}
-{$ELSE}
-  {$i SRL/SRL.scar}
-{$ENDIF}
+{$i SRL/SRL.simba}
+
 {*******************************************************************************
 R_BOSS    Remote Based Objest Search System
 by: Home, Hobbit, Kyle Undefined, Zyt3x and BraK also known as Dev Team 6
 Description: System that automatically identifies and finds object in the
 inventory and bank
 *******************************************************************************}
-// To DO Check Sat, CommonCOlors
+
+{ TODO
+    - Check Hue/Sat
+}
 
 {//////////////////////////////////////////////////////////////////////////////}
 {///      IMPORTANT                 REMINDER                 IMPORTANT      ///}
@@ -54,11 +54,27 @@ begin
   try Result := (FixedSumIntegerArray(tI) div Length(tI)); except Result := 0; end;
 end;
 
-{*******************************************************************************
-function CommonColorsBMP(Bmp : Integer) :TIntegerArray;
-by: Dev Team 6
-Description: Takes 3 best colors for given BMP.
-*******************************************************************************}
+(*
+CommonColorsBMP
+~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    function GetColorsBMP(BMP : Integer; BadColors : TIntegerArray) : TIntegerArray;
+
+Takes 3 best colors for given BMP.
+
+.. note::
+
+    Author: Dev Team 6
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    CommonColors := GetColorsBMP(BMP, [2171169, 526344, 460551, 0]);
+*)
 function GetColorsBMP(BMP : Integer; BadColors : TIntegerArray) : TIntegerArray;
 var
   W, H, I, J, C : Integer;
@@ -91,24 +107,40 @@ begin
   SetLength(Result, 3);
 end;
 
-{*******************************************************************************
-procedure ModifyColors(Colors :TIntegerArray; var Color, Tol :Integer; var Hue, Sat :Extended);
-by: Dev Team 6
-Description: Takes an array of colors and returns the CTS2 Information.
-*******************************************************************************}
-procedure ModifyColors(Colors :TIntegerArray; var Color, Tol :Integer; var Hue, Sat :Extended);
+(*
+ModifyColors
+~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    procedure ModifyColors(Colors : TIntegerArray; var Color, Tol : Integer; var Hue, Sat : Extended);
+
+Takes an array of colors and returns the CTS2 Information.
+
+.. note::
+
+    Author: Dev Team 6
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    ModifyColors(CommonColors, BestColor, Tolerance, Hue, Sat);
+*)
+procedure ModifyColors(Colors : TIntegerArray; var Color, Tol : Integer; var Hue, Sat : Extended);
 var
   I,II : integer;
   HSLColor : Array[1..3] of Extended;
   HSL : Array[0..1] of Array[1..3] of Extended;
 
 begin
-  For I := 1 to 3 do
+  for I := 1 to 3 do
     HSL[0][i] := 255;
-  For I := 0 to High(Colors) do
+  for I := 0 to High(Colors) do
   begin;
     ColortoHSL(Colors[i],HSLColor[1],HSLColor[2],HSLColor[3]);
-    For II := 1 to 3 do
+    for II := 1 to 3 do
     begin
       HSL[0][II] := MinE(HSLColor[II],HSL[0][II]);
       HSL[1][II] := MaxE(HSLColor[II],HSL[1][II]);
@@ -124,11 +156,27 @@ begin
   end;
 end;
 
-{*******************************************************************************
-function CashStringToInt(S : string) : Integer;
-by: TomTuff
-Description: Takes a string amount, and returns the Integer equivalent.
-*******************************************************************************}
+(*
+CashStringToInt
+~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    function CashStringToInt(S : string) : Integer;
+
+Takes a string amount, and returns the Integer equivalent.
+
+.. note::
+
+    Author: TomTuff
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    Price := CashStringToInt(Between('<td>', '<', Between('Current guide price', '/td>', S)));
+*)
 function CashStringToInt(S : string) : Integer;
 var
   i, ii : Integer;
@@ -158,11 +206,27 @@ begin
     except end;
 end;
 
-{*******************************************************************************
-function DownloadFile(FileLink, Path : string) : Boolean;
-by: Dev Team 6
-Description: Downloads a file to a specified path
-*******************************************************************************}
+(*
+DownloadFile
+~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    function DownloadFile(FileLink, Path : string) : Boolean;
+
+Downloads a file to a specified path.
+
+.. note::
+
+    Author: Dev Team 6
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    if DownloadFile('http://services.runescape.com/m=itemdb_rs/g=runescape/obj_sprite.gif?id=' + ToStr(itemID), AppPath + 'Includes\DB\' + ToStr(itemID) + '.gif') then
+*)
 function DownloadFile(FileLink, Path : string) : Boolean;
 var
   PageString: string;
@@ -179,21 +243,53 @@ begin
   end;
 end;
 
-{*******************************************************************************
-function GEItemExists(itemID : Integer) : Boolean;
-by: Dev Team 6
-Description: Checks the local item DB to see if the item being requested exists
-*******************************************************************************}
+(*
+GEItemExists
+~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    function GEItemExists(itemID : Integer) : Boolean;
+
+Checks the local item DB to see if the item being requested exists.
+
+.. note::
+
+    Author: Dev Team 6
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    if(GEItemExists(itemID))then
+*)
 function GEItemExists(itemID : Integer) : Boolean;
 begin
   Result := FileExists(AppPath + 'Includes\db\' + ToStr(itemID) + '.ini');
 end;
 
-{*******************************************************************************
-function ReadGEItemINI(itemID : Integer) : TGEItem;
-by: Dev Team 6
-Description: Reads the items .INI file and returns a TGEItem record
-*******************************************************************************}
+(*
+ReadGEItemINI
+~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    function ReadGEItemINI(itemID : Integer) : TGEItem;
+
+Reads the items .INI file and returns a TGEItem record.
+
+.. note::
+
+    Author: Dev Team 6
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    Result := ReadGEItemINI(itemID);
+*)
 function ReadGEItemINI(itemID : Integer) : TGEItem;
 var
   I : Integer;
@@ -209,7 +305,7 @@ begin
     Result.BMP := BitmapFromString(32, 32, ReadINI(ToStr(itemID), 'BMP', Path));
     Result.BlackCount := StrToIntDef(ReadINI(ToStr(itemID), 'BlackCount', Path), -1);
     Result.AverageColor := StrToIntDef(ReadINI(ToStr(itemID), 'AverageColor', Path), -1);
-    For I := 0 to 2 do
+    for I := 0 to 2 do
       Result.CommonColors[i] := StrToIntDef(ReadINI(ToStr(itemID), 'CommonColors' + Inttostr(i), Path), -1);
     Result.BestColor := StrToIntDef(ReadINI(ToStr(itemID), 'BestColor', Path), -1);
     Result.Tolerance := StrToIntDef(ReadINI(ToStr(itemID), 'Tolerance', Path), -1);
@@ -220,11 +316,27 @@ begin
   end;
 end;
 
-{*******************************************************************************
-procedure WriteGEItemINI(Item : TGEItem);
-by: Dev Team 6
-Description: Writes a .INI file for the TGEItem that is passed in
-*******************************************************************************}
+(*
+WriteGEItemINI
+~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    procedure WriteGEItemINI(Item : TGEItem);
+
+Writes a .INI file for the TGEItem that is passed in.
+
+.. note::
+
+    Author: Dev Team 6
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    WriteGEItemINI(Result);
+*)
 procedure WriteGEItemINI(Item : TGEItem);
 var
   I : Integer;
@@ -243,7 +355,7 @@ begin
       if Item.BlackCount > 0 then
         WriteINI(ToStr(ID), 'BlackCount', ToStr(BlackCount), Path);
       WriteINI(ToStr(ID), 'AverageColor', ToStr(AverageColor), Path);
-      For I := 0 to 2 do
+      for I := 0 to 2 do
         WriteINI(ToStr(ID), 'CommonColors' + inttostr(i), ToStr(CommonColors[i]), Path);
       WriteINI(ToStr(ID), 'BestColor', ToStr(BestColor), Path);
       WriteINI(ToStr(ID), 'Tolerance', ToStr(Tolerance), Path);
@@ -255,12 +367,27 @@ begin
   end;
 end;
 
-{*******************************************************************************
-function GetGEItemBMPFromID(itemID : Integer) : Integer;
-by: Dev Team 6
-Description: Retrieves the .gif image from the GE. Exits if it fails to get a
-             proper Image.
-*******************************************************************************}
+(*
+GetGEItemBMPFromID
+~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    function GetGEItemBMPFromID(itemID : Integer) : Integer;
+
+Retrieves the .gif image from the GE. Exits if it fails to get a proper Image.
+
+.. note::
+
+    Author: Dev Team 6
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    BMP := GetGEItemBMPFromID(itemID);
+*)
 function GetGEItemBMPFromID(itemID : Integer) : Integer;
 var
   I, J, W, H, BMP : Integer;
@@ -289,20 +416,36 @@ begin
   end;
 end;
 
-{*******************************************************************************
-function CreateGEItemFromIDEx(itemID : Integer; Force : Boolean) : TGEItem;
-by: Dev Team 6
-Description: Creates an TGEItem for the ID that is passed in. If Force is set
-             to True, the current .gif image and .INI files will be rewriten
-*******************************************************************************}
-function CreateGEItemFromIDEx(itemID : Integer; Force : Boolean) : TGEItem;
+(*
+CreateGEItemFromIDEx
+~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    function CreateGEItemFromIDEx(itemID : Integer; force : Boolean) : TGEItem;
+
+Creates an TGEItem for the ID that is passed in. if force is set to True, the
+current .gif image and .INI files will be rewriten.
+
+.. note::
+
+    Author: Dev Team 6
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    Result := CreateGEItemFromIDEx(itemID, False);
+*)
+function CreateGEItemFromIDEx(itemID : Integer; force : Boolean) : TGEItem;
 var
   S : string;
   TmpCTS, Target, W, H, I : Integer;
   BoxTPA, TPA : TPointArray;
   FilterColors : TIntegerArray;
 begin
-  if(GEItemExists(itemID) and (not(Force)))then
+  if(GEItemExists(itemID) and (not(force)))then
   begin
     Result := ReadGEItemINI(itemID);
     Exit;
@@ -340,34 +483,81 @@ begin
   WriteGEItemINI(Result);
 end;
 
-{*******************************************************************************
-function CreateGEItemFromID(itemID : Integer) : TGEItem;
-by: Dev Team 6
-Description: Creates an TGEItem for the ID passed in, and disables Force
-*******************************************************************************}
+(*
+CreateGEItemFromID
+~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    function CreateGEItemFromID(itemID : Integer) : TGEItem;
+
+Creates an TGEItem for the ID passed in, and disables force.
+
+.. note::
+
+    Author: Dev Team 6
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    item[i] := CreateGEItemFromID(IDArray[I]);
+*)
 function CreateGEItemFromID(itemID : Integer) : TGEItem;
 begin
   Result := CreateGEItemFromIDEx(itemID, False);
 end;
 
-{*******************************************************************************
-function LoadGEItemFromID(itemID : Integer) : TGEItem;
-by: Dev Team 6
-Description: Loads an TGEItem record from the local DB of items
-*******************************************************************************}
+(*
+LoadGEItemFromID
+~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    function LoadGEItemFromID(itemID : Integer) : TGEItem;
+
+Loads an TGEItem record from the local DB of items.
+
+.. note::
+
+    Author: Dev Team 6
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    Item := LoadGEItemFromID(itemID);
+*)
 function LoadGEItemFromID(itemID : Integer) : TGEItem;
 begin
   if(GEItemExists(itemID))then
     Result := ReadGEItemINI(itemID)
 end;
 
-{*******************************************************************************
-function FindItemBMP(var X, Y : Integer; ItemBMP : Integer; Inv : Boolean) : Boolean;
-by: Dev Team 6
-Description: Searches for the item and sets the X, Y variables to the coordinates
-             if found. Use True to search the Inventory and False to search the
-             Bank.
-*******************************************************************************}
+(*
+FindItemBMP
+~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    function FindItemBMP(var X, Y : Integer; ItemBMP : Integer; Inv : Boolean) : Boolean;
+
+Searches for the item and sets the X, Y variables to the coordinates if found.
+Use True to search the Inventory and False to search the Bank.
+
+.. note::
+
+    Author: Dev Team 6
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    Result := FindItemBMP(X, Y, Item.BMP, Inv);
+*)
 function FindItemBMP(var X, Y : Integer; ItemBMP : Integer; Inv : Boolean) : Boolean;
 var
   Acc : Extended;
@@ -390,23 +580,54 @@ begin
     end;
 end;
 
-{*******************************************************************************
-function GetItemBL(var Box : TBox) : Integer;
-by: Dev Team 6
-Description: Gets the Blacklist count for the specified TBox.
-*******************************************************************************}
+(*
+GetItemBL
+~~~~~~~~~
+
+.. code-block:: pascal
+
+    function GetItemBL(var Box : TBox) : Integer;
+
+Gets the Blacklist count for the specified TBox.
+
+.. note::
+
+    Author: Dev Team 6
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    Result := GetItemBL(TB);
+*)
 function GetItemBL(var Box : TBox) : Integer;
 begin
   Result := CountColor(131072, Box.X1, Box.Y1 + 17, Box.X2, Box.Y2);
 end;
 
-{*******************************************************************************
-function FindItemBL(Var X, Y :Integer; Count : Integer; Inv : Boolean) : Boolean;
-by: Dev Team 6
-Description: Searches the screen for the item with the correct BL count and
-             returns the x, y coordinates of the Item. Use True to search the
-             Inventory and False to search the Bank.
-*******************************************************************************}
+(*
+FindItemBL
+~~~~~~~~~~
+
+.. code-block:: pascal
+
+    function FindItemBL(Var X, Y : Integer; Count : Integer; Inv : Boolean) : Boolean;
+
+Searches the screen for the item with the correct BL count and returns the x, y
+coordinates of the Item. Use True to search the Inventory and False to search the Bank.
+
+.. note::
+
+    Author: Dev Team 6
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    Result := FindItemBL(X, Y, Item.BlackCount, Inv);
+*)
 function FindItemBL(Var X, Y : Integer; Count : Integer; Inv : Boolean) : Boolean;
 var
   I, NumberSlots : Integer;
@@ -417,7 +638,7 @@ begin
     NumberSlots := 28
   else
     NumberSlots := 50;
-  For I := 1 to NumberSlots do
+  for I := 1 to NumberSlots do
   begin
     if Inv then
       TB := InvBox(I)
@@ -434,20 +655,35 @@ begin
   end;
 end;
 
-{*******************************************************************************
+(*
+GetBLFromPoint
+~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    function GetBLFromPoint(x, y : Integer) : Integer;
+
+Finds the Slot for X, Y coordinates if found. It outputs the blacklist data for the Item.
+
+.. note::
+
+    Author: Dev Team 6
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    Item.BlackCount := GetBLFromPoint(x, y);
+*)
 function GetBLFromPoint(x, y : Integer) : Integer;
-by: Dev Team 6
-Description: Finds the Slot for X, Y coordinates if found. It outputs the
-             blacklist data for the Item.
-*******************************************************************************}
-Function GetBLFromPoint(x, y : Integer) : Integer;
 var
   I : Integer;
   TB : TBox;
 begin
-  If PointInBox(Point(x, y), IntToBox(MIX1, MIY1, MIX2, MIY2)) then
+  if PointInBox(Point(x, y), IntToBox(MIX1, MIY1, MIX2, MIY2)) then
   begin
-    For I := 1 to 28 do
+    for I := 1 to 28 do
       if PointInBox(Point(x, y), InvBox(i)) then
       begin
         TB := InvBox(i);
@@ -455,7 +691,7 @@ begin
         Break;
       end;
   end else
-  For I := 1 to 50 do
+  for I := 1 to 50 do
     if PointInBox(Point(x, y), IntToBox(MBX1, MBY1, MBX2, MBY2)) then
     begin
       TB := BankIndexToMSBox(i);
@@ -464,11 +700,27 @@ begin
     end;
 end;
 
-{*******************************************************************************
-function SortTIAFrom(TIA : TIntegerArray; From : Integer) : TIntegerArray;
-by: Dev Team 6
-Description: Sorts a color array to the closest color.
-*******************************************************************************}
+(*
+SortTIAFrom
+~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    function SortTIAFrom(TIA : TIntegerArray; From : Integer) : TIntegerArray;
+
+Sorts a color array to the closest color.
+
+.. note::
+
+    Author: Dev Team 6
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    CloseCountArr := SortTIAFrom(CountArr, Item.BestColorCount);
+*)
 function SortTIAFrom(TIA : TIntegerArray; From : Integer) : TIntegerArray;
 var
   TPA : TPointArray;
@@ -487,11 +739,27 @@ begin
   Result := TIA;
 end;
 
-{*******************************************************************************
-function GetBankScrollPos() : Integer;
-by: Dev Team 6
-Description: Gets the position of the bank scroll bar
-*******************************************************************************}
+(*
+GetBankScrollPos
+~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    function GetBankScrollPos : Integer;
+
+Gets the position of the bank scroll bar.
+
+.. note::
+
+    Author: Dev Team 6
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    if (GetBankScrollPos = 1) then
+*)
 function GetBankScrollPos : Integer;
 var
   cts : Integer;
@@ -508,11 +776,27 @@ begin
   ColorToleranceSpeed(cts);
 end;
 
-{*******************************************************************************
-procedure SetBankScrollPos(Top : Boolean);
-by: Dev Team 6
-Description: Sets the position of the bank scroll bar
-*******************************************************************************}
+(*
+SetBankScrollPos
+~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    procedure SetBankScrollPos(Top : Boolean);
+
+Sets the position of the bank scroll bar.
+
+.. note::
+
+    Author: Dev Team 6
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    SetBankScrollPos(True);
+*)
 procedure SetBankScrollPos(Top : Boolean);
 begin
   if Top and (GetBankScrollPos <> 0) then
@@ -525,11 +809,27 @@ begin
   Wait(750 + Random(200));
 end;
 
-{*******************************************************************************
-function BankBox(Index : Integer) : TBox;
-by: Dev Team 6
-Description: Returns the box coords of a given bank slot
-*******************************************************************************}
+(*
+BankBox
+~~~~~~~
+
+.. code-block:: pascal
+
+    function BankBox(Index : Integer): TBox;
+
+Returns the box coords of a given bank slot.
+
+.. note::
+
+    Author: Dev Team 6
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    TB := BankBox(i);
+*)
 function BankBox(Index : Integer): TBox;
 begin
   with Result do
@@ -550,11 +850,27 @@ begin
   end;
 end;
 
-{*******************************************************************************
-function CoordsToBank(X, Y: Integer) : Integer;
-by: Dev Team 6
-Description: Takes a X/Y coord and converts them into a bank slot
-*******************************************************************************}
+(*
+CoordsToBank
+~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    function CoordsToBank(X, Y : Integer): Integer;
+
+Takes a X/Y coord and converts them into a bank slot
+
+.. note::
+
+    Author: Dev Team 6
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    ItemBox := BankBox(CoordsToBank(MP.X, MP.Y));
+*)
 function CoordsToBank(X, Y : Integer): Integer;
 var
   tmpBox : TBox;
@@ -576,13 +892,28 @@ begin
     Result := 0;
 end;
 
-{*******************************************************************************
-function FindItemCC(var X, Y : Integer; colors : TIntegerArray; Inv : Boolean) : Boolean;
-by: Dev Team 6
-Description: Searches either your bank or inventory for the common colors
-             that are created from the GE image at runtime, and returns the
-             X, Y coords if the tem was found
-*******************************************************************************}
+(*
+FindItemCC
+~~~~~~~~~~
+
+.. code-block:: pascal
+
+    function FindItemCC(var X, Y : Integer; colors : TIntegerArray; Inv : Boolean) : Boolean;
+
+Searches either your bank or inventory for the common colors that are created
+from the GE image at runtime, and returns the X, Y coords if the tem was found.
+
+.. note::
+
+    Author: Dev Team 6
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    Result := FindItemCC(x, y, Item.CommonColors, Inv);
+*)
 function FindItemCC(var X, Y : Integer; colors : TIntegerArray; Inv : Boolean) : Boolean;
 var
   i, a : Integer;
@@ -628,7 +959,6 @@ begin
   end;
 end;
 
-
 function TestItem(itemID : Integer) : Boolean;
 var
   Item : TGEItem;
@@ -666,37 +996,69 @@ begin
     MiddlePoint := MiddleTPA(aTPA[I]);
     ItemBox := InvBox(CoordsToItem(MiddlePoint.X, MiddlePoint.Y));
     FindColorsTolerance(TPA, Item.BestColor, ItemBox.X1, ItemBox.Y1, ItemBox.X2, ItemBox.Y2, Item.Tolerance)
-    If Length(TPA) = CloseCountArr[0] then
+    if Length(TPA) = CloseCountArr[0] then
       MMouse(MiddlePoint.X, MiddlePoint.Y, 0, 0);
   end;
 end;
 
-{*******************************************************************************
-Procedure FreeItemBMPArray;
-by: Dev Team 6
-Description: Loops through the TItemArray Freeing all Bitmaps.
-*******************************************************************************}
-Procedure FreeItemBMPArray;
+(*
+FreeItemBMPArray
+~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    procedure FreeItemBMPArray;
+
+Loops through the TItemArray Freeing all Bitmaps.
+
+.. note::
+
+    Author: Dev Team 6
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    AddOnTerminate('FreeItemBMPArray');
+*)
+procedure FreeItemBMPArray;
 var
   I : Integer;
 begin
-  For I := 0 to High(TItemArray) do
+  for I := 0 to High(TItemArray) do
     FreeBitmap(TItemArray[i].BMP);
 end;
 
-{*******************************************************************************
-function LoadItems(IDArray : TIntegerArray) : Boolean;
-by: Dev Team 6
-Description: Loads the specified Items into the TIntegerArray. Returns False if
-             it fails to load all Items.
-*******************************************************************************}
+(*
+LoadItems
+~~~~~~~~~
+
+.. code-block:: pascal
+
+    function LoadItems(IDArray : TIntegerArray) : Boolean;
+
+Loads the specified Items into the TIntegerArray. Returns False if it fails to
+load all Items.
+
+.. note::
+
+    Author: Dev Team 6
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    LoadItems([1275, 1383, 1381]);
+*)
 function LoadItems(IDArray : TIntegerArray) : Boolean;
 var
   Failed : TIntegerArray;
-  I, II, III : Integer;
+  I, II : Integer;
 begin
   SetArrayLength(TItemArray, Length(IDArray));
-  For I := 0 to High(IDArray) do
+  for I := 0 to High(IDArray) do
   begin
     TItemArray[I - II] := CreateGEItemFromID(IDArray[I]);
     if TItemArray[I - II].Name = '' then
@@ -712,29 +1074,44 @@ begin
   AddOnTerminate('FreeItemBMPArray');
 end;
 
-{*******************************************************************************
-function FindGEItem(var X, Y : Integer; itemID : Integer, Inv : Boolean) : Boolean;
-by: Dev Team 6
-Description: Searches for the item and set the X, Y variables to the coordinates
-             if found. Uses True to search the Inventory and False to search the
-             Bank. Updates the BlackList data for the Item as needed.
-*******************************************************************************}
-Function FindGEItem(var X, Y : Integer; itemID : Integer; Inv : Boolean) : Boolean;
+(*
+FindGEItem
+~~~~~~~~~~
+
+.. code-block:: pascal
+
+    function FindGEItem(var X, Y : Integer; itemID : Integer; Inv : Boolean) : Boolean;
+
+Searches for the item and set the X, Y variables to the coordinates if found.
+Uses True to search the Inventory and False to search the Bank. Updates the
+BlackList data for the Item as needed.
+
+.. note::
+
+    Author: Dev Team 6
+    Last Modified: Unknown
+
+Example:
+
+.. code-block:: pascal
+
+    if(FindGEItem(x, y, 1275, False))then
+*)
+function FindGEItem(var X, Y : Integer; itemID : Integer; Inv : Boolean) : Boolean;
 var
   BLBool : Boolean;
   I : Integer;
   Item : TGEItem;
-
 begin
   Result := False;
   for I := 0 to High(TItemArray) do
   if TItemArray[i].ID = itemID then
     Item := TItemArray[i];
-  Try
+  try
   for I := 0 to 3 do
   begin
     Case I of
-      0 : If Item.BlackCount > 0 then
+      0 : if Item.BlackCount > 0 then
             Result := FindItemBL(X, Y, Item.BlackCount, Inv);
 
       1 : Result := FindItemCC(x, y, Item.CommonColors, Inv);
@@ -750,7 +1127,7 @@ begin
       break;
     end;
   end;
-  Finally
+  finally
     if BLBool then
     begin
       debugln('Updated Black List Information for ID #' + IntToStr(Item.ID) + '.');
@@ -765,13 +1142,14 @@ end;
 // TESTING //
 {//////////////////////////////////////////////////////////////////////////////}
 var
-  Item : TGEItem;
   x, y : Integer;
 
 begin
   SetupSRL;
   ClearDebug();
   MouseSpeed := 15;
-  writeln('did we load Items := ' + tostr(LoadItems([1275, 1383, 2, 1381])));  //Testing New LoadItems function :)
+  writeln('did we load Items := ' + tostr(LoadItems([1275, 1383, 1381])));  //Testing New LoadItems function :)
   writeln('Currently Loaded Items := ' + Tostr(TItemArray));                //Printing then loaded Items :D
+  if(FindGEItem(x, y, 1275, False))then
+    MMouse(x, y, 10, 10);
 end.
